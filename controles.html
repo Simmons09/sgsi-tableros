@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Revisiones</title>
+<title>Controles</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -110,7 +110,7 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
   <header>
     <div>
       <div class="today" id="today"></div>
-      <h1>Revisiones</h1>
+      <h1>Controles</h1>
       <p class="sub">Controles periódicos de ISO 27001 y PCI DSS. Cada fila lleva su fecha y su responsable, y se puede cambiar.</p>
     </div>
     <div class="summary" id="summary" role="group" aria-label="Filtrar por estado"></div>
@@ -214,11 +214,11 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
 #login .msg.err{color:#b3261e}
 #salir{position:fixed;right:10px;bottom:10px;z-index:50;font-size:12px;color:#545454;background:#fff;border:1px solid #C0C0C0;border-radius:20px;padding:5px 12px;cursor:pointer;display:none}
 </style>
-<div id="login" hidden><div class="box"><h2>Revisiones</h2><p>Ingresa con tu correo de WPOSS. Te enviaremos un enlace para entrar, sin contraseña.</p>
+<div id="login" hidden><div class="box"><h2>Controles</h2><p>Ingresa con tu correo de WPOSS. Te enviaremos un enlace para entrar, sin contraseña.</p>
 <input id="lgMail" type="email" inputmode="email" autocomplete="email" placeholder="tucorreo@wposs.com"><button id="lgBtn" type="button">Enviarme el enlace</button><div class="msg" id="lgMsg"></div></div></div>
 <button id="salir" type="button">Cerrar sesión</button>
 <script>
-const FBCFG={apiKey:"AIzaSyDCqkyeiYWBTBSRc-V6mEC3ZX_doEr_O0I",authDomain:"wposs-revisiones.firebaseapp.com",projectId:"wposs-revisiones",storageBucket:"wposs-revisiones.firebasestorage.app",messagingSenderId:"129876186379",appId:"1:129876186379:web:40e51bafe61cbc611d7e0e"};
+const FBCFG={apiKey:"AIzaSyDCqkyeiYWBTBSRc-V6mEC3ZX_doEr_O0I",authDomain:"wposs-Controles.firebaseapp.com",projectId:"wposs-Controles",storageBucket:"wposs-Controles.firebasestorage.app",messagingSenderId:"129876186379",appId:"1:129876186379:web:40e51bafe61cbc611d7e0e"};
 const FB={
   async start(onReady,onDenied){
     const V="10.14.1",B="https://www.gstatic.com/firebasejs/"+V+"/";
@@ -381,7 +381,7 @@ async function saveAct(id,val){
 }
 async function save(id,val){
   if(db){
-    try{ if(val) await db.doc("revisiones/"+id).set(val); else await db.doc("revisiones/"+id).delete(); return true }
+    try{ if(val) await db.doc("Controles/"+id).set(val); else await db.doc("Controles/"+id).delete(); return true }
     catch(e){ toast("No tienes permiso para guardar cambios en este tablero"); return false }
   }
   if(val) ov[id]=val; else delete ov[id];
@@ -508,7 +508,7 @@ document.getElementById("segOwn").addEventListener("click",ev=>{const b=ev.targe
 render();
 FB.start(d=>{
   db=d;
-  db.collection("revisiones").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); ov=m; render()},()=>{});
+  db.collection("Controles").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); ov=m; render()},()=>{});
   db.collection("actividades").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); act=m; render()},()=>{});
 });
 </script>
