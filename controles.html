@@ -105,13 +105,7 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
 }
 @media (prefers-reduced-motion:no-preference){ .cell,.pill{transition:background .15s} }
 
-/* fondo WPOSS */
-html{background:var(--bg)}
-body{background:transparent;position:relative}
-body::before{content:"";position:fixed;inset:0;z-index:-1;background:url(fondo.webp) center/cover no-repeat}
-.wrap{background:color-mix(in srgb,var(--bg) 93%,transparent);padding:20px;border-radius:16px;box-shadow:0 8px 30px rgba(0,45,55,.18)}
-@media(max-width:600px){.wrap{padding:12px;border-radius:12px}}
-</style>
+</style><link rel="stylesheet" href="fondo.css">
 
 <div class="wrap">
   <header>

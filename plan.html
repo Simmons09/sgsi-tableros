@@ -123,13 +123,7 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
 @media (max-width:520px){.row3{grid-template-columns:1fr}}
 
 
-/* fondo WPOSS */
-html{background:var(--bg)}
-body{background:transparent;position:relative}
-body::before{content:"";position:fixed;inset:0;z-index:-1;background:url(fondo.webp) center/cover no-repeat}
-.wrap{background:color-mix(in srgb,var(--bg) 93%,transparent);padding:20px;border-radius:16px;box-shadow:0 8px 30px rgba(0,45,55,.18)}
-@media(max-width:600px){.wrap{padding:12px;border-radius:12px}}
-</style>
+</style><link rel="stylesheet" href="fondo.css">
 
 <div class="wrap">
   <header>
@@ -258,7 +252,7 @@ let db=null, ov={}, st={f:"",q:"",r:"",t:"",p:""}, cur=null;
 function all(){
   const m={}; DATA.forEach(d=>m[d.id]=d);
   Object.keys(ov).forEach(k=>{const v=ov[k]; if(v&&v.borrada) delete m[k]; else if(v) m[k]=Object.assign({},m[k]||{},v)});
-  return Object.values(m).sort((a,b)=>(a.n||0)-(b.n||0));
+  return Object.values(m).sort((a,b)=>(b.n||0)-(a.n||0));
 }
 function vig(t){return t.rep||t.fin||""}
 function sem(t){ if(t.est==="Ejecutada") return "ok"; const f=vig(t); if(!f) return ""; const d=days(f); return d<0?"late":d<=15?"soon":""; }
