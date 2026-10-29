@@ -157,11 +157,10 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
     <label class="field"><span>Actividad</span><textarea id="fAct" required></textarea></label>
     <label class="field"><span>Entregable / evidencia esperada</span><textarea id="fEnt"></textarea></label>
     <div class="row2">
-      <label class="field"><span>Responsable</span><input type="text" id="fRes" list="dlResp"></label>
+      <label class="field"><span>Responsable</span><select id="fRes"><option value="">Sin asignar</option><option>Brayner</option><option>Laura</option><option>Yesly</option></select></label>
       <label class="field"><span>Apoyo / participantes</span><input type="text" id="fApo"></label>
     </div>
-    <datalist id="dlResp"></datalist>
-    <div class="row3">
+        <div class="row3">
       <label class="field"><span>Prioridad</span><select id="fPr"><option>Alta</option><option>Media</option><option>Baja</option></select></label>
       <label class="field"><span>Estado</span><select id="fEst"><option>Pendiente</option><option>En ejecución</option><option>Ejecutada</option></select></label>
       <label class="field"><span>Tiempo estimado</span><input type="text" id="fDur" placeholder="2 semanas"></label>
@@ -296,6 +295,20 @@ async function put(id,val){
   ov[id]=val; try{localStorage.setItem("plan-T",JSON.stringify(ov))}catch(e){} render(); return true;
 }
 function find(id){return all().find(t=>t.id===id)}
+
+/* ---------- aviso por correo (EmailJS) ---------- */
+const MAIL={service:"service_17m50za",template:"template_kd8gmc5",key:"wGnQZMpelzHqLGqrs",
+ to:{brayner:"braynerflorez@wposs.com",laura:"laurasepulveda@wposs.com",yesly:"yeslymontaguth@wposs.com"}};
+function mailDe(nombre){const k=String(nombre||"").trim().toLowerCase().split(/[\s@]/)[0];return MAIL.to[k]||""}
+async function avisar(nombre,tarea,tablero,fecha){
+  const to=mailDe(nombre); if(!to||MAIL.key.indexOf("TU_")===0) return;
+  try{
+    const r=await fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({service_id:MAIL.service,template_id:MAIL.template,user_id:MAIL.key,
+        template_params:{to_email:to,responsable:String(nombre).trim().split(/[\s@]/)[0],tarea:tarea,tablero:tablero,fecha:fecha||"Sin fecha",enlace:location.href.split("#")[0]}})});
+    toast(r.ok?"Aviso enviado a "+to:"No se pudo enviar el aviso por correo");
+  }catch(e){toast("No se pudo enviar el aviso por correo")}
+}
 function trimOf(f){if(!f)return "";const[y,m]=f.split("-").map(Number);return "T"+Math.ceil(m/3)+"-"+y}
 
 const F={act:"fAct",ent:"fEnt",resp:"fRes",apo:"fApo",pri:"fPr",est:"fEst",dur:"fDur",ini:"fIni",fin:"fFin",rep:"fRep",tri:"fTr",real:"fReal",evi:"fEvi",obs:"fObs"};
@@ -304,7 +317,7 @@ function openDlg(id){
   const t=cur||{pri:"Alta",est:"Pendiente",ini:TODAY};
   $("dTitle").textContent=cur?"Tarea "+cur.n:"Nueva tarea";
   $("dSub").textContent=cur?"Edita lo que haga falta; al guardar queda para todos.":"Completa lo que sepas; el resto lo puedes editar después.";
-  Object.keys(F).forEach(k=>{$(F[k]).value=t[k]||""});
+  Object.keys(F).forEach(k=>{if(k==="resp"){const s=$(F[k]);[...s.querySelectorAll("option[data-old]")].forEach(o=>o.remove());if(t.resp&&![...s.options].some(o=>o.value===t.resp)){const o=document.createElement("option");o.value=o.textContent=t.resp;o.dataset.old="1";s.appendChild(o)}}$(F[k]).value=t[k]||""});
   $("bDel").hidden=!cur; $("dlg").showModal();
 }
 $("frm").addEventListener("submit",async ev=>{
@@ -317,7 +330,8 @@ $("frm").addEventListener("submit",async ev=>{
   let id,n;
   if(cur){id=cur.id;n=cur.n}else{n=Math.max(0,...all().map(t=>t.n||0))+1;id="x"+Date.now()}
   $("dlg").close();
-  if(await put(id,Object.assign({id:id,n:n},r))) toast("Guardado");
+  const antes=cur?cur.resp:"";
+  if(await put(id,Object.assign({id:id,n:n},r))){ toast("Guardado"); if(r.resp&&r.resp!==antes) avisar(r.resp,"Tarea "+n+": "+r.act,"Plan de Trabajo SGSI",r.fin||r.rep) }
 });
 $("bCan").onclick=()=>$("dlg").close();
 $("bDel").onclick=()=>{$("dlg").close();$("dDelTxt").textContent="Se quitará la tarea "+cur.n+" del tablero para todos.";$("dlgD").showModal()};

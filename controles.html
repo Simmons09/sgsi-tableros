@@ -369,6 +369,20 @@ function render(){
 }
 
 /* ---------- guardado ---------- */
+
+/* ---------- aviso por correo (EmailJS) ---------- */
+const MAIL={service:"service_17m50za",template:"template_kd8gmc5",key:"wGnQZMpelzHqLGqrs",
+ to:{brayner:"braynerflorez@wposs.com",laura:"laurasepulveda@wposs.com",yesly:"yeslymontaguth@wposs.com"}};
+function mailDe(nombre){const k=String(nombre||"").trim().toLowerCase().split(/[\s@]/)[0];return MAIL.to[k]||""}
+async function avisar(nombre,tarea,tablero,fecha){
+  const to=mailDe(nombre); if(!to||MAIL.key.indexOf("TU_")===0) return;
+  try{
+    const r=await fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({service_id:MAIL.service,template_id:MAIL.template,user_id:MAIL.key,
+        template_params:{to_email:to,responsable:String(nombre).trim().split(/[\s@]/)[0],tarea:tarea,tablero:tablero,fecha:fecha||"Sin fecha",enlace:location.href.split("#")[0]}})});
+    toast(r.ok?"Aviso enviado a "+to:"No se pudo enviar el aviso por correo");
+  }catch(e){toast("No se pudo enviar el aviso por correo")}
+}
 function toast(t){const el=document.getElementById("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{el.hidden=true},2600)}
 function lsRead(k){try{const v=localStorage.getItem(k+"-"+PERSONA);return v?JSON.parse(v):{}}catch(e){return {}}}
 function lsWrite(){try{localStorage.setItem("rev-"+PERSONA,JSON.stringify(ov));localStorage.setItem("act-"+PERSONA,JSON.stringify(act))}catch(e){}}
@@ -462,9 +476,11 @@ $("frmA").addEventListener("submit",async ev=>{
   let id=editId;
   if(!id){ id="x"+Date.now().toString(36); rec.custom=true; }
   else if(act[id]&&act[id].custom) rec.custom=true;
+  const antes=editId&&find(editId)?find(editId).o:"N";
   if(await saveAct(id,rec)){
     if(editId&&ov[id]&&rec.f!=="U") await save(id,null);
     toast(editId?"Actividad actualizada":"Actividad agregada");
+    if(rec.o!=="N"&&rec.o!==antes) avisar(NOMBRES[rec.o],rec.n,"tablero de Controles",rec.prox);
   }
   dlgA.close();
 });
@@ -495,7 +511,7 @@ document.getElementById("rows").addEventListener("change",async ev=>{
   const s=ev.target.closest("select[data-own]"); if(!s) return;
   const c=find(s.dataset.own); if(!c) return;
   const rec=Object.assign({},c,{o:s.value}); delete rec.id;
-  if(await saveAct(c.id,rec)) toast("Responsable: "+NOMBRES[s.value]);
+  if(await saveAct(c.id,rec)){ toast("Responsable: "+NOMBRES[s.value]); if(s.value!=="N"&&s.value!==c.o) avisar(NOMBRES[s.value],c.n,"tablero de Controles",(eff(c)||{}).prox) }
 });
 document.getElementById("summary").addEventListener("click",ev=>{const b=ev.target.closest("button[data-e]"); if(!b) return; st.estado=st.estado===b.dataset.e?"":b.dataset.e; render()});
 document.getElementById("segNorma").addEventListener("click",ev=>{const b=ev.target.closest("button"); if(!b) return; st.norma=b.dataset.v;
