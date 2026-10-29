@@ -270,7 +270,6 @@ function render(){
   $("summary").innerHTML=pills.map(p=>'<button type="button" class="pill '+p[3]+'" data-f="'+p[0]+'" aria-pressed="'+(st.f===p[0])+'" style="'+(st.f===p[0]?"outline:2px solid var(--accent)":"")+'">'+p[1]+' <b>'+p[2]+'</b></button>').join("");
   const rs=[...new Set(L.map(t=>t.resp).filter(Boolean))].sort(), ts=[...new Set(L.map(t=>t.tri).filter(Boolean))].sort();
   fill("fResp",rs,"Todos los responsables",st.r); fill("fTri",ts,"Todos los trimestres",st.t);
-  $("dlResp").innerHTML=rs.map(r=>'<option value="'+esc(r)+'">').join("");
   const list=L.filter(matches);
   $("rows").innerHTML=list.map(t=>{
     const s=sem(t);
