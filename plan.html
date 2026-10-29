@@ -122,6 +122,13 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px}
 @media (max-width:520px){.row3{grid-template-columns:1fr}}
 
+
+/* fondo WPOSS */
+html{background:var(--bg)}
+body{background:transparent;position:relative}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:url(fondo.webp) center/cover no-repeat}
+.wrap{background:color-mix(in srgb,var(--bg) 93%,transparent);padding:20px;border-radius:16px;box-shadow:0 8px 30px rgba(0,45,55,.18)}
+@media(max-width:600px){.wrap{padding:12px;border-radius:12px}}
 </style>
 
 <div class="wrap">
