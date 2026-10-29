@@ -207,7 +207,7 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
 #login .box{background:#fff;border:1px solid #C0C0C0;border-radius:14px;max-width:380px;width:100%;padding:24px;box-shadow:0 8px 30px rgba(0,115,125,.15)}
 #login h2{margin:0 0 6px;color:#00737D;font-size:20px}
 #login p{margin:0 0 14px;color:#545454;font-size:14px;line-height:1.4}
-#login input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #C0C0C0;border-radius:8px;font-size:16px;margin-bottom:10px}
+#login input{color:#222;background:#fff;width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #C0C0C0;border-radius:8px;font-size:16px;margin-bottom:10px}
 #login button{width:100%;padding:11px;border:0;border-radius:8px;background:#00737D;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
 #login button:disabled{opacity:.6}
 #login .msg{margin-top:10px;font-size:13px;color:#545454;min-height:18px}
@@ -218,7 +218,7 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
 <input id="lgMail" type="email" inputmode="email" autocomplete="email" placeholder="tucorreo@wposs.com"><button id="lgBtn" type="button">Enviarme el enlace</button><div class="msg" id="lgMsg"></div></div></div>
 <button id="salir" type="button">Cerrar sesión</button>
 <script>
-const FBCFG={apiKey:"AIzaSyDCqkyeiYWBTBSRc-V6mEC3ZX_doEr_O0I",authDomain:"wposs-Controles.firebaseapp.com",projectId:"wposs-Controles",storageBucket:"wposs-Controles.firebasestorage.app",messagingSenderId:"129876186379",appId:"1:129876186379:web:40e51bafe61cbc611d7e0e"};
+const FBCFG={apiKey:"AIzaSyDCqkyeiYWBTBSRc-V6mEC3ZX_doEr_O0I",authDomain:"wposs-revisiones.firebaseapp.com",projectId:"wposs-revisiones",storageBucket:"wposs-revisiones.firebasestorage.app",messagingSenderId:"129876186379",appId:"1:129876186379:web:40e51bafe61cbc611d7e0e"};
 const FB={
   async start(onReady,onDenied){
     const V="10.14.1",B="https://www.gstatic.com/firebasejs/"+V+"/";
@@ -381,7 +381,7 @@ async function saveAct(id,val){
 }
 async function save(id,val){
   if(db){
-    try{ if(val) await db.doc("Controles/"+id).set(val); else await db.doc("Controles/"+id).delete(); return true }
+    try{ if(val) await db.doc("revisiones/"+id).set(val); else await db.doc("revisiones/"+id).delete(); return true }
     catch(e){ toast("No tienes permiso para guardar cambios en este tablero"); return false }
   }
   if(val) ov[id]=val; else delete ov[id];
@@ -508,7 +508,7 @@ document.getElementById("segOwn").addEventListener("click",ev=>{const b=ev.targe
 render();
 FB.start(d=>{
   db=d;
-  db.collection("Controles").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); ov=m; render()},()=>{});
+  db.collection("revisiones").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); ov=m; render()},()=>{});
   db.collection("actividades").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); act=m; render()},()=>{});
 });
 </script>
