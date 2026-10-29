@@ -157,7 +157,7 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
     <label class="field"><span>Actividad</span><textarea id="fAct" required></textarea></label>
     <label class="field"><span>Entregable / evidencia esperada</span><textarea id="fEnt"></textarea></label>
     <div class="row2">
-      <label class="field"><span>Responsable</span><select id="fRes"><option value="">Sin asignar</option><option>Brayner</option><option>Laura</option><option>Yesly</option></select></label>
+      <label class="field"><span>Responsable</span><select id="fRes"><option value="">Sin asignar</option><optgroup label="Roles"><option>Oficial de Seguridad de la Información</option><option>Oficial de Cumplimiento</option><option>Analista de Seguridad</option></optgroup><optgroup label="Procesos"><option>Seguridad de la Información</option><option>Desarrollo de Software</option><option>Operaciones</option><option>Gestión Financiera</option><option>Gestión de Mesa de Ayuda</option><option>Gestión del Talento Humano</option><option>Gestión Comercial</option><option>Soporte Interno</option><option>Estrategia Corporativa</option><option>Gestión de la Infraestructura Tecnológica</option><option>Gestión de Proyectos</option><option>QA</option><option>Todos los procesos</option></optgroup></select></label>
       <label class="field"><span>Apoyo / participantes</span><input type="text" id="fApo"></label>
     </div>
         <div class="row3">
@@ -248,10 +248,16 @@ const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","di
 const fmt=s=>{if(!s)return "";const[y,m,d]=s.split("-").map(Number);return d+" "+MES[m-1]+" "+y};
 const days=s=>Math.round((new Date(s+"T00:00:00")-new Date(TODAY+"T00:00:00"))/864e5);
 let db=null, ov={}, st={f:"",q:"",r:"",t:"",p:""}, cur=null;
+const ROLES=[["Oficial de Seguridad de la Información","Brayner","braynerflorez@wposs.com"],["Oficial de Cumplimiento","Laura","laurasepulveda@wposs.com"],["Analista de Seguridad","Yesly","yeslymontaguth@wposs.com"]];
+const PROCS=["Seguridad de la Información","Desarrollo de Software","Operaciones","Gestión Financiera","Gestión de Mesa de Ayuda","Gestión del Talento Humano","Gestión Comercial","Soporte Interno","Estrategia Corporativa","Gestión de la Infraestructura Tecnológica","Gestión de Proyectos","QA","Todos los procesos"];
+function normR(v){const s=String(v||"").trim(); if(!s) return ""; const l=s.toLowerCase();
+  const x=ROLES.find(r=>r[0].toLowerCase()===l)||PROCS.find(p=>p.toLowerCase()===l); if(x) return Array.isArray(x)?x[0]:x;
+  if(l.includes("brayner")) return ROLES[0][0]; if(l.includes("laura")) return ROLES[1][0]; if(l.includes("yesly")) return ROLES[2][0];
+  if(l==="proceso de seguridad") return PROCS[0]; return s}
 function all(){
   const m={}; DATA.forEach(d=>m[d.id]=d);
   Object.keys(ov).forEach(k=>{const v=ov[k]; if(v&&v.borrada) delete m[k]; else if(v) m[k]=Object.assign({},m[k]||{},v)});
-  return Object.values(m).sort((a,b)=>(b.n||0)-(a.n||0));
+  return Object.values(m).map(t=>Object.assign({},t,{resp:normR(t.resp)})).sort((a,b)=>(b.n||0)-(a.n||0));
 }
 function vig(t){return t.rep||t.fin||""}
 function sem(t){ if(t.est==="Ejecutada") return "ok"; const f=vig(t); if(!f) return ""; const d=days(f); return d<0?"late":d<=15?"soon":""; }
@@ -296,15 +302,13 @@ async function put(id,val){
 function find(id){return all().find(t=>t.id===id)}
 
 /* ---------- aviso por correo (EmailJS) ---------- */
-const MAIL={service:"service_17m50za",template:"template_kd8gmc5",key:"wGnQZMpelzHqLGqrs",
- to:{brayner:"braynerflorez@wposs.com",laura:"laurasepulveda@wposs.com",yesly:"yeslymontaguth@wposs.com"}};
-function mailDe(nombre){const k=String(nombre||"").trim().toLowerCase().split(/[\s@]/)[0];return MAIL.to[k]||""}
+const MAIL={service:"service_17m50za",template:"template_kd8gmc5",key:"wGnQZMpelzHqLGqrs"};
 async function avisar(nombre,tarea,tablero,fecha){
-  const to=mailDe(nombre); if(!to||MAIL.key.indexOf("TU_")===0) return;
+  const R=ROLES.find(r=>r[0]===nombre); if(!R) return; const to=R[2];
   try{
     const r=await fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({service_id:MAIL.service,template_id:MAIL.template,user_id:MAIL.key,
-        template_params:{to_email:to,responsable:String(nombre).trim().split(/[\s@]/)[0],tarea:tarea,tablero:tablero,fecha:fecha||"Sin fecha",enlace:location.href.split("#")[0]}})});
+        template_params:{to_email:to,responsable:R[1],tarea:tarea,tablero:tablero,fecha:fecha||"Sin fecha",enlace:location.href.split("#")[0]}})});
     toast(r.ok?"Aviso enviado a "+to:"No se pudo enviar el aviso por correo");
   }catch(e){toast("No se pudo enviar el aviso por correo")}
 }
