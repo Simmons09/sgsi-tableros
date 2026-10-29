@@ -1,6 +1,6 @@
 html{background:#f6f9fa}
 body{background:transparent;position:relative}
-body::before{content:"";position:fixed;inset:0;z-index:-1;background:#f6f9fa url(fondo.webp) left top/200% auto no-repeat}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:#f6f9fa url(fondo.webp) left top/120% auto no-repeat}
 .wrap{background:color-mix(in srgb,var(--bg) 94%,transparent);padding:20px;border-radius:16px;box-shadow:0 8px 30px rgba(0,45,55,.18)}
 @media(max-width:700px){body::before{background-size:cover}}
 @media(max-width:600px){.wrap{padding:12px;border-radius:12px}}
