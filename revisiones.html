@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revisiones</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: matriz de una fila por control con columnas Mensual / Trimestral / Semestral / Anual; la fecha vive en la columna de su frecuencia. */
+:root{
+  /* Paleta corporativa: #00737D, #0CC0AA, #41BDC8, #40C6D1, #3FE4F3, #D9FAFD, #545454, #C0C0C0 */
+  --bg:#f3fcfd; --surface:#ffffff; --ink:#2f3a3c; --muted:#5f6b6d; --line:#cfdcde;
+  --accent:#00737D; --accent-ink:#ffffff; --accent-soft:#D9FAFD; --brand2:#0CC0AA;
+  --late:#b3261e; --late-bg:#fbe9e7; --soon:#8a5a00; --soon-bg:#fdf1d6; --ok:#1d6b46; --ok-bg:#e1f2e8;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#08272b; --surface:#0f363b; --ink:#e8f7f9; --muted:#9fc3c8;
+    --line:#1f4f56; --accent:#3FE4F3; --accent-ink:#00292d; --accent-soft:#0f4a50;
+    --late:#ff8a80; --late-bg:#3a1c1a; --soon:#f2c15a; --soon-bg:#372a0c; --ok:#6fd3a0; --ok-bg:#153024;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08272b; --surface:#0f363b; --ink:#e8f7f9; --muted:#9fc3c8; --line:#1f4f56;
+  --accent:#3FE4F3; --accent-ink:#00292d; --accent-soft:#0f4a50;
+  --late:#ff8a80; --late-bg:#3a1c1a; --soon:#f2c15a; --soon-bg:#372a0c; --ok:#6fd3a0; --ok-bg:#153024;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{border-top:6px solid var(--accent);background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;
+  padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{position:relative;max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-end;justify-content:space-between}
+h1{color:var(--accent);font-family:var(--f-display);font-weight:700;font-size:clamp(26px,4vw,36px);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:6px 0 0;max-width:62ch}
+.today{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.summary{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid transparent;cursor:pointer;background:var(--surface);color:var(--ink);font-family:inherit}
+.pill b{font-family:var(--f-mono);font-weight:500}
+.pill.late{background:var(--late-bg);color:var(--late)} .pill.soon{background:var(--soon-bg);color:var(--soon)} .pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill[aria-pressed="true"]{outline:2px solid currentColor;outline-offset:1px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--muted);padding:7px 12px;font:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+input[type=text],input[type=search],input[type=date],select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+input[type=search]{min-width:200px;flex:1 1 200px;max-width:320px}
+label.chk{display:inline-flex;gap:6px;align-items:center;color:var(--muted);cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th{background:var(--accent-soft);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600;white-space:nowrap}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.name{min-width:320px;max-width:420px}
+.nm{font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;align-items:center}
+.tag{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+.tag.who{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.note{color:var(--muted);font-size:12.5px;margin-top:5px}
+.cell{display:flex;flex-direction:column;gap:4px;align-items:flex-start;padding:8px 10px;border-radius:8px;min-width:150px}
+.cell .d{font-family:var(--f-mono);font-size:13px;font-weight:500}
+.cell .s{font-size:12px;font-weight:600}
+.cell .l{font-size:11.5px;color:var(--muted)}
+.cell.late{background:var(--late-bg);color:var(--late)} .cell.soon{background:var(--soon-bg);color:var(--soon)} .cell.ok{background:var(--ok-bg);color:var(--ok)}
+.cell .l{color:inherit;opacity:.8}
+.cell button{margin-top:4px;font:inherit;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer}
+.cell button:hover{background:var(--surface)}
+td.empty{color:var(--line);text-align:center}
+.cell.none{background:var(--accent-soft);color:var(--muted)}
+select.own{font:inherit;font-size:13px;font-weight:600;padding:4px 8px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.rowact{display:flex;gap:14px;margin-top:8px}
+.rowact button{font:inherit;font-size:12px;background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer}
+.rowact button:hover{color:var(--ink)} .rowact button.del:hover{color:var(--late)}
+.toolbar .btn{margin-left:auto}
+textarea{resize:vertical;min-height:60px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+dialog.wide{width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.empty-state{padding:36px 16px;text-align:center;color:var(--muted)}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:20px;width:min(420px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(8,16,22,.55)}
+dialog h2{font-family:var(--f-display);font-size:20px;margin:0 0 4px}
+dialog p{margin:0 0 14px;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field span{font-size:12px;color:var(--muted);font-weight:600}
+.actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:6px}
+.btn{font:inherit;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.link{border-color:transparent;color:var(--muted);margin-right:auto}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;font-weight:600;z-index:20}
+footer{color:var(--muted);font-size:12.5px;max-width:80ch}
+@media (max-width:720px){
+  .tablewrap{border:0;background:transparent;overflow:visible}
+  table,tbody,tr,td{display:block;min-width:0}
+  thead{display:none}
+  tr{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+  td{padding:0;border:0}
+  td.empty{display:none}
+  td.name{min-width:0;max-width:none}
+  td[data-f]::before{content:attr(data-f);display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:4px}
+  .cell{min-width:0;align-self:stretch}
+}
+@media (prefers-reduced-motion:no-preference){ .cell,.pill{transition:background .15s} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="today" id="today"></div>
+      <h1>Revisiones</h1>
+      <p class="sub">Controles periódicos de ISO 27001 y PCI DSS. Cada fila lleva su fecha y su responsable, y se puede cambiar.</p>
+    </div>
+    <div class="summary" id="summary" role="group" aria-label="Filtrar por estado"></div>
+  </header>
+
+  <div class="toolbar">
+    <div class="seg" role="group" aria-label="Norma" id="segNorma">
+      <button type="button" data-v="" aria-pressed="true">Todas</button>
+      <button type="button" data-v="ISO" aria-pressed="false">ISO 27001</button>
+      <button type="button" data-v="PCI" aria-pressed="false">PCI DSS</button>
+    </div>
+    <input type="search" id="q" placeholder="Buscar control" aria-label="Buscar control">
+    <div class="seg" role="group" aria-label="Responsable" id="segOwn">
+      <button type="button" data-v="" aria-pressed="true">Todos</button>
+      <button type="button" data-v="B" aria-pressed="false">Brayner</button>
+      <button type="button" data-v="L" aria-pressed="false">Laura</button>
+      <button type="button" data-v="Y" aria-pressed="false">Yesly</button>
+      <button type="button" data-v="N" aria-pressed="false">Sin asignar</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="hechas"> Mostrar hechas</label>
+    <button type="button" class="btn primary" id="btnAdd">+ Agregar actividad</button>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Control</th><th>Responsable</th><th>Mensual</th><th>Trimestral</th><th>Semestral</th><th>Anual</th><th>Tarea única</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty-state" id="empty" hidden>Ningún control coincide con este filtro.</div>
+  </div>
+
+  <footer>
+    Al marcar un control periódico como revisado, la próxima fecha se calcula sola: mensual suma 1 mes, trimestral 3, semestral 6 y anual 12. Puedes ajustar la fecha antes de guardar. Con «+ Agregar actividad» puedes sumar una del catálogo o escribir una propia, y con Editar o Eliminar ajustar las que ya están. Cada fila trae un responsable propuesto por rol; cámbialo en el desplegable de la fila. Las tareas únicas vienen del Plan de Trabajo SI-PLA-008 y están sin asignar. Fuentes: carpeta SGSI, carpeta PCI DSS 2025 y matriz WPOSS-FC-08.
+  </footer>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="frm">
+    <h2 id="dTitle"></h2>
+    <p id="dSub"></p>
+    <label class="field"><span>Fecha en que se hizo la revisión</span><input type="date" id="dUlt" required></label>
+    <label class="field" id="dProxWrap"><span>Próxima revisión</span><input type="date" id="dProx" required></label>
+    <div class="actions">
+      <button type="button" class="btn link" id="dReset">Volver al valor original</button>
+      <button type="button" class="btn" id="dCancel">Cancelar</button>
+      <button type="submit" class="btn primary">Guardar</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlgA" class="wide">
+  <form method="dialog" id="frmA">
+    <h2 id="aTitle"></h2>
+    <p id="aSub"></p>
+    <label class="field" id="aCatWrap"><span>Elegir del catálogo (opcional)</span>
+      <select id="aCat"></select></label>
+    <label class="field"><span>Nombre de la actividad</span><input type="text" id="aN" required maxlength="160"></label>
+    <div class="row2">
+      <label class="field"><span>Frecuencia</span>
+        <select id="aF"><option value="M">Mensual</option><option value="T">Trimestral</option><option value="S">Semestral</option><option value="A" selected>Anual</option><option value="U">Tarea única</option></select></label>
+      <label class="field"><span>Responsable</span>
+        <select id="aO"><option value="B">Brayner</option><option value="L">Laura</option><option value="Y">Yesly</option><option value="N">Sin asignar</option></select></label>
+    </div>
+    <div class="row2">
+      <label class="field"><span>Norma</span>
+        <select id="aNorma"><option value="ISO">ISO 27001</option><option value="PCI">PCI DSS</option><option value="ISO+PCI">ISO 27001 y PCI DSS</option></select></label>
+      <label class="field"><span>Referencia (control o requisito)</span><input type="text" id="aRef" maxlength="60" placeholder="Ej. A.8.8 · 6.3.1"></label>
+    </div>
+    <div class="row2">
+      <label class="field"><span>Última revisión (si la hay)</span><input type="date" id="aUlt"></label>
+      <label class="field"><span>Próxima revisión</span><input type="date" id="aProx" required></label>
+    </div>
+    <label class="field"><span>Nota</span><textarea id="aNota" maxlength="400"></textarea></label>
+    <div class="actions">
+      <button type="button" class="btn" id="aCancel">Cancelar</button>
+      <button type="submit" class="btn primary" id="aSave">Guardar</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlgD">
+  <form method="dialog" id="frmD">
+    <h2>Eliminar actividad</h2>
+    <p id="delSub"></p>
+    <div class="actions">
+      <button type="button" class="btn" id="delCancel">Cancelar</button>
+      <button type="submit" class="btn primary">Eliminar</button>
+    </div>
+  </form>
+</dialog>
+<div id="toast" hidden></div>
+
+<style>
+#login[hidden]{display:none}
+#login{position:fixed;inset:0;z-index:99;background:#D9FAFD;display:flex;align-items:center;justify-content:center;padding:16px;font-family:inherit}
+#login .box{background:#fff;border:1px solid #C0C0C0;border-radius:14px;max-width:380px;width:100%;padding:24px;box-shadow:0 8px 30px rgba(0,115,125,.15)}
+#login h2{margin:0 0 6px;color:#00737D;font-size:20px}
+#login p{margin:0 0 14px;color:#545454;font-size:14px;line-height:1.4}
+#login input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #C0C0C0;border-radius:8px;font-size:16px;margin-bottom:10px}
+#login button{width:100%;padding:11px;border:0;border-radius:8px;background:#00737D;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+#login button:disabled{opacity:.6}
+#login .msg{margin-top:10px;font-size:13px;color:#545454;min-height:18px}
+#login .msg.err{color:#b3261e}
+#salir{position:fixed;right:10px;bottom:10px;z-index:50;font-size:12px;color:#545454;background:#fff;border:1px solid #C0C0C0;border-radius:20px;padding:5px 12px;cursor:pointer;display:none}
+</style>
+<div id="login" hidden><div class="box"><h2>Revisiones</h2><p>Ingresa con tu correo de WPOSS. Te enviaremos un enlace para entrar, sin contraseña.</p>
+<input id="lgMail" type="email" inputmode="email" autocomplete="email" placeholder="tucorreo@wposs.com"><button id="lgBtn" type="button">Enviarme el enlace</button><div class="msg" id="lgMsg"></div></div></div>
+<button id="salir" type="button">Cerrar sesión</button>
+<script>
+const FBCFG={apiKey:"AIzaSyDCqkyeiYWBTBSRc-V6mEC3ZX_doEr_O0I",authDomain:"wposs-revisiones.firebaseapp.com",projectId:"wposs-revisiones",storageBucket:"wposs-revisiones.firebasestorage.app",messagingSenderId:"129876186379",appId:"1:129876186379:web:40e51bafe61cbc611d7e0e"};
+const FB={
+  async start(onReady,onDenied){
+    const V="10.14.1",B="https://www.gstatic.com/firebasejs/"+V+"/";
+    const [A,AU,FS]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
+    const app=A.initializeApp(FBCFG), auth=AU.getAuth(app), fs=FS.getFirestore(app);
+    const $=id=>document.getElementById(id), msg=(t,e)=>{$("lgMsg").textContent=t;$("lgMsg").className="msg"+(e?" err":"")};
+    const url=location.origin+location.pathname;
+    $("lgBtn").onclick=async()=>{
+      const m=$("lgMail").value.trim().toLowerCase(); if(!m){msg("Escribe tu correo",1);return}
+      $("lgBtn").disabled=true;
+      try{ await AU.sendSignInLinkToEmail(auth,m,{url:url,handleCodeInApp:true}); try{localStorage.setItem("fbMail",m)}catch(e){}; msg("Listo. Revisa tu correo y abre el enlace desde este mismo navegador (mira también en no deseados).") }
+      catch(e){ msg("No se pudo enviar el enlace ("+(e.code||"error")+")",1) }
+      $("lgBtn").disabled=false;
+    };
+    $("salir").onclick=()=>AU.signOut(auth).then(()=>location.reload());
+    if(AU.isSignInWithEmailLink(auth,location.href)){
+      let m=null; try{m=localStorage.getItem("fbMail")}catch(e){}
+      if(!m) m=prompt("Confirma tu correo para terminar de ingresar");
+      try{ await AU.signInWithEmailLink(auth,m,location.href); try{localStorage.removeItem("fbMail")}catch(e){}; history.replaceState(null,"",url) }
+      catch(e){ $("login").hidden=false; msg("El enlace ya no sirve o es de otro navegador. Pide uno nuevo.",1) }
+    }
+    AU.onAuthStateChanged(auth,u=>{
+      if(!u){ $("login").hidden=false; $("salir").style.display="none"; return }
+      $("login").hidden=true; $("salir").style.display="block"; $("salir").textContent="Cerrar sesión · "+u.email;
+      const db={
+        doc:p=>({set:v=>FS.setDoc(FS.doc(fs,p),v),delete:()=>FS.deleteDoc(FS.doc(fs,p))}),
+        collection:n=>({onSnapshot:(ok,err)=>FS.onSnapshot(FS.collection(fs,n),ok,e=>{ if(e&&e.code==="permission-denied"){ $("login").hidden=false; msg("Tu correo ("+u.email+") no tiene acceso. Pide a Brayner que lo agregue.",1) } err&&err(e) })})
+      };
+      window.FBDB=db; onReady(db);
+    });
+  }
+};
+</script>
+<script>
+const PERSONA="T";
+const NOMBRES={B:"Brayner",L:"Laura",Y:"Yesly",N:"Sin asignar"};
+const FREQ={M:{n:"Mensual",m:1},T:{n:"Trimestral",m:3},S:{n:"Semestral",m:6},A:{n:"Anual",m:12},U:{n:"Tarea única",m:0}};
+const COLS=["M","T","S","A","U"];
+const DATA=[];
+/* catálogo de actividades que salieron de la lectura y no estaban en los tableros */
+/* la frecuencia es una sugerencia: cámbiala en el formulario si el documento no la declara */
+const CAT=[
+ {n:"Reglas de WAF y Cloud One",norma:"PCI",ref:"",f:"S",o:"B",nota:"Revisión semestral según la consolidación PCI."},
+ {n:"Revisión y actualización de políticas de seguridad",norma:"PCI",ref:"REQ 12",f:"A",o:"L",nota:"Matriz WPOSS-FC-08, REQ 12."},
+ {n:"Revisión anual de cada POL y POE del SGSI",norma:"ISO",ref:"",f:"A",o:"B",nota:"Cada documento declara revisión anual."},
+ {n:"Revisión de boletines de seguridad (SI-POE-003)",norma:"ISO",ref:"",f:"M",o:"B",nota:"El procedimiento no declara frecuencia; ajusta la que decidan."},
+ {n:"Evaluación de riesgos (SI-MAT-006)",norma:"ISO",ref:"",f:"A",o:"B",nota:"Frecuencia por definir."},
+ {n:"INS-D Inspección del plan de inspecciones",norma:"ISO",ref:"SI-PLA-002",f:"T",o:"B",nota:"El inspector no coincide entre la hoja y el seguimiento. Frecuencia y responsable por definir."},
+ {n:"INS-F Inspección del plan de inspecciones",norma:"ISO",ref:"SI-PLA-002",f:"T",o:"L",nota:"El inspector no coincide entre la hoja y el seguimiento. Frecuencia y responsable por definir."},
+ {n:"Verificación de copias de seguridad de Bitbucket",norma:"ISO",ref:"",f:"T",o:"B",nota:"Sin frecuencia declarada. Responsable por confirmar con Infraestructura."},
+ {n:"Informe de ejecución de backups",norma:"ISO",ref:"",f:"M",o:"B",nota:"Sin frecuencia declarada."},
+ {n:"Revisión de efectividad del monitoreo",norma:"ISO",ref:"",f:"S",o:"B",nota:"Sin frecuencia declarada."},
+ {n:"Seguimiento a activos críticos y riesgos bajos",norma:"ISO",ref:"",f:"S",o:"B",nota:"Sin frecuencia declarada."},
+ {n:"Vigilancia de grupos de interés y autoridades (SI-MAT-003)",norma:"ISO",ref:"",f:"S",o:"B",nota:"Sin frecuencia declarada."},
+ {n:"Clasificación de la información y retención documental",norma:"ISO",ref:"",f:"A",o:"B",nota:"Sin frecuencia declarada."},
+ {n:"Reinducción del personal (GH-POE-003)",norma:"ISO",ref:"",f:"A",o:"Y",nota:"Sin periodicidad numérica. Lo lleva Talento Humano."},
+ {n:"Indicadores de Talento Humano",norma:"ISO",ref:"9.1",f:"T",o:"Y",nota:"Contratación, inducción, rotación y procesos disciplinarios (GH-PRO-001)."},
+ {n:"Indicadores de Desarrollo de Software",norma:"ISO",ref:"9.1",f:"M",o:"B",nota:"Código seguro, vulnerabilidades, SLA y segregación de ambientes (DS-PRO-001)."},
+ {n:"Capacitación en desarrollo seguro",norma:"ISO",ref:"",f:"S",o:"Y",nota:"Meta de 100 % del personal (DS-PRO-001)."},
+ {n:"Indicadores de Mesa de Ayuda (GMA-001 y 002)",norma:"ISO",ref:"9.1",f:"M",o:"Y",nota:"Vienen solo del registro SI-REG-004."},
+ {n:"Presupuesto del SGSI (SI-FIN-001)",norma:"ISO",ref:"",f:"A",o:"B",nota:"Frecuencia sugerida: anual."},
+ {n:"Acuse de lectura del Manual de Políticas",norma:"ISO",ref:"",f:"A",o:"Y",nota:"Sin frecuencia explícita en SI-MAN-001."}
+];
+const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+
+function pad(n){return String(n).padStart(2,"0")}
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function parts(s){const a=s.split("-");return [+a[0],+a[1],+a[2]]}
+function fmt(s){const p=parts(s);return pad(p[2])+" "+MES[p[1]-1]+" "+p[0]}
+function edate(s,n){const p=parts(s);let t=p[1]-1+n,y=p[0]+Math.floor(t/12),m=((t%12)+12)%12;
+  const last=new Date(y,m+1,0).getDate();return y+"-"+pad(m+1)+"-"+pad(Math.min(p[2],last))}
+function diff(a,b){const x=parts(a),y=parts(b);return Math.round((Date.UTC(y[0],y[1]-1,y[2])-Date.UTC(x[0],x[1]-1,x[2]))/864e5)}
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+const TODAY=todayStr();
+let ov={};            // cambios guardados: id -> {ult, prox}
+let act={};           // actividades: id -> registro completo (agregada o editada) o {borrada:true}
+function all(){
+  const out=[];
+  DATA.forEach(c=>{const a=act[c.id]; if(a&&a.borrada) return; out.push(a&&a.n?Object.assign({},c,a,{id:c.id}):c)});
+  Object.keys(act).forEach(k=>{const a=act[k]; if(a&&a.custom&&!a.borrada&&a.n) out.push(Object.assign({},a,{id:k}))});
+  return out;
+}
+function find(id){return all().find(x=>x.id===id)}
+let db=null, store="";
+const st={norma:"",q:"",o:"",hechas:false,estado:""};
+
+function eff(c){
+  const o=ov[c.id];
+  if(c.f==="U"){
+    if(o&&o.hecha) return {ult:o.ult||null,prox:c.prox||null,edit:true,hecha:true};
+    return {ult:null,prox:c.prox||null,edit:false,hecha:false};
+  }
+  if(o&&o.prox) return {ult:o.ult||null,prox:o.prox,edit:true};
+  const prox=c.prox||edate(c.ult,FREQ[c.f].m);
+  return {ult:c.ult,prox:prox,edit:false};
+}
+function estado(prox){if(!prox) return "none"; const d=diff(TODAY,prox);return d<0?"late":(d<=15?"soon":"ok")}
+function etiqueta(prox){
+  if(!prox) return "Sin fecha";
+  const d=diff(TODAY,prox);
+  if(d<0) return "Vencido hace "+(-d)+(d===-1?" día":" días");
+  if(d===0) return "Vence hoy";
+  if(d===1) return "Vence mañana";
+  return "Faltan "+d+" días";
+}
+
+function visible(){
+  return all().filter(c=>{
+    if(st.o && c.o!==st.o) return false;
+    if(c.f==="U" && !st.hechas && eff(c).hecha) return false;
+    if(st.norma && c.norma.indexOf(st.norma)<0) return false;
+    if(st.q){const t=(c.n+" "+(c.ref||"")+" "+(c.nota||"")).toLowerCase(); if(t.indexOf(st.q.toLowerCase())<0) return false}
+    return true;
+  }).map(c=>({c:c,e:eff(c)})).sort((a,b)=>(a.e.prox||"9999")<(b.e.prox||"9999")?-1:1);
+}
+
+function render(){
+  document.getElementById("today").textContent="Hoy "+fmt(TODAY);
+  const base=visible();
+  const cnt={late:0,soon:0,ok:0};
+  base.forEach(r=>{ if(!r.e.hecha && cnt[estado(r.e.prox)]!==undefined) cnt[estado(r.e.prox)]++; });
+  const sm=document.getElementById("summary");
+  sm.innerHTML=[["late","Vencidos"],["soon","Vencen en 15 días"],["ok","Vigentes"]].map(x=>
+    '<button type="button" class="pill '+x[0]+'" data-e="'+x[0]+'" aria-pressed="'+(st.estado===x[0])+'"><b>'+cnt[x[0]]+'</b> '+x[1]+'</button>').join("");
+  const list=st.estado?base.filter(r=>!r.e.hecha&&estado(r.e.prox)===st.estado):base;
+  const tb=document.getElementById("rows");
+  tb.innerHTML=list.map(r=>{
+    const c=r.c,e=r.e,s=estado(e.prox);
+    const tags=(c.norma.split("+").map(x=>'<span class="tag">'+(x==="ISO"?"ISO 27001":"PCI DSS")+'</span>').join(""))+
+      (c.ref?'<span class="tag">'+esc(c.ref)+'</span>':'');
+    const cells=COLS.map(f=>{
+      if(f!==c.f) return '<td class="empty" aria-hidden="true">·</td>';
+      if(c.f==="U"){
+        if(e.hecha) return '<td data-f="'+FREQ[f].n+'"><div class="cell ok"><span class="d">'+(e.prox?fmt(e.prox):"Sin fecha")+'</span><span class="s">Hecha'+(e.ult?' el '+fmt(e.ult):'')+'</span><button type="button" data-reopen="'+c.id+'">Reabrir</button></div></td>';
+        return '<td data-f="'+FREQ[f].n+'"><div class="cell '+s+'"><span class="d">'+(e.prox?fmt(e.prox):"Sin fecha")+'</span><span class="s">'+etiqueta(e.prox)+'</span><span class="l">Fecha compromiso</span>'+
+          '<button type="button" data-id="'+c.id+'">Marcar hecha</button></div></td>';
+      }
+      return '<td data-f="'+FREQ[f].n+'"><div class="cell '+s+'"><span class="d">'+fmt(e.prox)+'</span><span class="s">'+etiqueta(e.prox)+'</span>'+
+        '<span class="l">'+(e.ult?'Última: '+fmt(e.ult):'Sin revisión registrada')+'</span>'+
+        '<button type="button" data-id="'+c.id+'">Marcar revisado</button></div></td>';
+    }).join("");
+    return '<tr><td class="name"><div class="nm">'+esc(c.n)+'</div><div class="meta">'+tags+'</div><div class="note">'+esc(c.nota||"")+'</div><div class="rowact"><button type="button" data-ed="'+c.id+'">Editar</button><button type="button" class="del" data-del="'+c.id+'">Eliminar</button></div></td><td data-f="Responsable"><select class="own" data-own="'+c.id+'" aria-label="Responsable">'+Object.keys(NOMBRES).map(k=>'<option value="'+k+'"'+(k===c.o?' selected':'')+'>'+NOMBRES[k]+'</option>').join("")+'</select></td>'+cells+'</tr>';
+  }).join("");
+  document.getElementById("empty").hidden=list.length>0;
+  document.querySelector("table").hidden=list.length===0;
+}
+
+/* ---------- guardado ---------- */
+function toast(t){const el=document.getElementById("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{el.hidden=true},2600)}
+function lsRead(k){try{const v=localStorage.getItem(k+"-"+PERSONA);return v?JSON.parse(v):{}}catch(e){return {}}}
+function lsWrite(){try{localStorage.setItem("rev-"+PERSONA,JSON.stringify(ov));localStorage.setItem("act-"+PERSONA,JSON.stringify(act))}catch(e){}}
+async function saveAct(id,val){
+  if(db){
+    try{ if(val) await db.doc("actividades/"+id).set(val); else await db.doc("actividades/"+id).delete(); return true }
+    catch(e){ toast("No tienes permiso para guardar cambios en este tablero"); return false }
+  }
+  if(val) act[id]=val; else delete act[id];
+  lsWrite(); render(); return true;
+}
+async function save(id,val){
+  if(db){
+    try{ if(val) await db.doc("revisiones/"+id).set(val); else await db.doc("revisiones/"+id).delete(); return true }
+    catch(e){ toast("No tienes permiso para guardar cambios en este tablero"); return false }
+  }
+  if(val) ov[id]=val; else delete ov[id];
+  lsWrite(); render(); return true;
+}
+
+/* ---------- diálogo ---------- */
+const dlg=document.getElementById("dlg");
+let cur=null;
+function openDlg(id){
+  const c=find(id); if(!c) return; cur=c;
+  const e=eff(c);
+  document.getElementById("dTitle").textContent=c.n;
+  const uni=c.f==="U";
+  document.getElementById("dProxWrap").hidden=uni; document.getElementById("dProx").required=!uni;
+  document.getElementById("dSub").textContent=uni?"Tarea única: al guardarla queda marcada como hecha y no se reprograma.":"Frecuencia "+FREQ[c.f].n.toLowerCase()+". Al guardar, la próxima revisión se calcula sumando "+FREQ[c.f].m+(FREQ[c.f].m===1?" mes":" meses")+".";
+  const u=document.getElementById("dUlt"),p=document.getElementById("dProx");
+  u.value=TODAY; p.value=uni?"":edate(TODAY,FREQ[c.f].m);
+  document.getElementById("dReset").hidden=!e.edit||uni;
+  dlg.showModal(); u.focus();
+}
+document.getElementById("dUlt").addEventListener("change",ev=>{
+  if(cur&&cur.f!=="U"&&ev.target.value) document.getElementById("dProx").value=edate(ev.target.value,FREQ[cur.f].m);
+});
+document.getElementById("dCancel").addEventListener("click",()=>dlg.close());
+document.getElementById("dReset").addEventListener("click",async()=>{
+  if(cur && await save(cur.id,null)) toast("Volvió a la fecha original");
+  dlg.close();
+});
+document.getElementById("frm").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const u=document.getElementById("dUlt").value,p=document.getElementById("dProx").value;
+  if(!cur||!u) return;
+  if(cur.f==="U"){ if(await save(cur.id,{hecha:true,ult:u})) toast("Tarea marcada como hecha"); dlg.close(); return; }
+  if(!p) return;
+  if(await save(cur.id,{ult:u,prox:p})) toast("Guardado. Próxima revisión: "+fmt(p));
+  dlg.close();
+});
+
+/* ---------- agregar / editar / eliminar ---------- */
+const dlgA=document.getElementById("dlgA"), dlgD=document.getElementById("dlgD");
+const $=id=>document.getElementById(id);
+let editId=null;
+function recalcProx(){const f=$("aF").value; if(f==="U"){ $("aProx").value=TODAY; return } const base=$("aUlt").value||TODAY; $("aProx").value=edate(base,FREQ[f].m)}
+function fillCat(){
+  $("aCat").innerHTML='<option value="">Actividad abierta (la escribo yo)</option>'+CAT.map((x,i)=>'<option value="'+i+'">'+esc(x.n)+'</option>').join("");
+}
+function openAdd(id){
+  editId=id||null;
+  const c=id?find(id):null;
+  $("aTitle").textContent=c?"Editar actividad":"Agregar actividad";
+  $("aSub").textContent=c?"Los cambios se guardan para quien abra este tablero.":"Elige una del catálogo o escribe una propia. Todo se puede ajustar antes de guardar.";
+  $("aCatWrap").hidden=!!c;
+  fillCat();
+  if(c){
+    const e=eff(c);
+    $("aN").value=c.n; $("aF").value=c.f; $("aO").value=c.o; $("aNorma").value=c.norma;
+    $("aRef").value=c.ref||""; $("aUlt").value=e.ult||""; $("aProx").value=e.prox; $("aNota").value=c.nota||"";
+  }else{
+    $("aN").value=""; $("aF").value="A"; $("aO").value="N"; $("aNorma").value="ISO";
+    $("aRef").value=""; $("aUlt").value=""; $("aNota").value=""; recalcProx();
+  }
+  dlgA.showModal(); $("aN").focus();
+}
+$("aCat").addEventListener("change",ev=>{
+  const x=CAT[ev.target.value]; if(!x) return;
+  $("aN").value=x.n; $("aF").value=x.f; $("aO").value=x.o; $("aNorma").value=x.norma; $("aRef").value=x.ref||""; $("aNota").value=x.nota||""; recalcProx();
+});
+$("aF").addEventListener("change",recalcProx);
+$("aUlt").addEventListener("change",recalcProx);
+$("aCancel").addEventListener("click",()=>dlgA.close());
+$("btnAdd").addEventListener("click",()=>openAdd());
+$("frmA").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const n=$("aN").value.trim(), prox=$("aProx").value; if(!n||!prox) return;
+  const rec={n:n,norma:$("aNorma").value,ref:$("aRef").value.trim(),f:$("aF").value,o:$("aO").value,nota:$("aNota").value.trim(),prox:prox,ult:$("aUlt").value||null};
+  let id=editId;
+  if(!id){ id="x"+Date.now().toString(36); rec.custom=true; }
+  else if(act[id]&&act[id].custom) rec.custom=true;
+  if(await saveAct(id,rec)){
+    if(editId&&ov[id]&&rec.f!=="U") await save(id,null);
+    toast(editId?"Actividad actualizada":"Actividad agregada");
+  }
+  dlgA.close();
+});
+let delId=null;
+function openDel(id){
+  const c=find(id); if(!c) return; delId=id;
+  $("delSub").textContent="Se quita «"+c.n+"» de este tablero para todas las personas que lo usan. Puedes volver a agregarla desde el catálogo o escribiéndola de nuevo.";
+  dlgD.showModal();
+}
+$("delCancel").addEventListener("click",()=>dlgD.close());
+$("frmD").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  if(!delId) return;
+  const isBase=DATA.some(x=>x.id===delId);
+  const ok=isBase?await saveAct(delId,{borrada:true}):await saveAct(delId,null);
+  if(ok) toast("Actividad eliminada");
+  dlgD.close();
+});
+
+/* ---------- eventos ---------- */
+document.getElementById("rows").addEventListener("click",ev=>{
+  const b=ev.target.closest("button[data-id]"); if(b) return openDlg(b.dataset.id);
+  const e=ev.target.closest("button[data-ed]"); if(e) return openAdd(e.dataset.ed);
+  const d=ev.target.closest("button[data-del]"); if(d) return openDel(d.dataset.del);
+  const r=ev.target.closest("button[data-reopen]"); if(r){ save(r.dataset.reopen,null).then(ok=>{ if(ok) toast("Tarea reabierta") }); }
+});
+document.getElementById("rows").addEventListener("change",async ev=>{
+  const s=ev.target.closest("select[data-own]"); if(!s) return;
+  const c=find(s.dataset.own); if(!c) return;
+  const rec=Object.assign({},c,{o:s.value}); delete rec.id;
+  if(await saveAct(c.id,rec)) toast("Responsable: "+NOMBRES[s.value]);
+});
+document.getElementById("summary").addEventListener("click",ev=>{const b=ev.target.closest("button[data-e]"); if(!b) return; st.estado=st.estado===b.dataset.e?"":b.dataset.e; render()});
+document.getElementById("segNorma").addEventListener("click",ev=>{const b=ev.target.closest("button"); if(!b) return; st.norma=b.dataset.v;
+  document.querySelectorAll("#segNorma button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); render()});
+document.getElementById("q").addEventListener("input",ev=>{st.q=ev.target.value.trim(); render()});
+document.getElementById("hechas").addEventListener("change",ev=>{st.hechas=ev.target.checked; render()});
+document.getElementById("segOwn").addEventListener("click",ev=>{const b=ev.target.closest("button"); if(!b) return; st.o=b.dataset.v;
+  document.querySelectorAll("#segOwn button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); render()});
+
+/* ---------- arranque ---------- */
+render();
+FB.start(d=>{
+  db=d;
+  db.collection("revisiones").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); ov=m; render()},()=>{});
+  db.collection("actividades").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); act=m; render()},()=>{});
+});
+</script>
+
+</body></html>
