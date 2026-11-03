@@ -338,10 +338,10 @@ async function avisar(nombre,tarea,tablero,fecha){
 const QUIEN={"braynerflorez@wposs.com":"Oficial de Seguridad","laurasepulveda@wposs.com":"Oficial de Cumplimiento","yeslymontaguth@wposs.com":"Analista de Seguridad"};
 let logs=[], logsLimpios=false;
 function logEvt(x){ if(!db) return; const k="log_"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-  try{ const p=db.doc("revisiones/"+k).set({t:Date.now(),u:QUIEN[String(window.FBUSER||"").toLowerCase()]||"Alguien",x:x}); if(p&&p.catch) p.catch(()=>{}) }catch(e){} }
+  try{ const p=db.doc("revisiones/"+k).set({t:Date.now(),u:QUIEN[String(window.FBUSER||"").toLowerCase()]||"Alguien",x:x,b:"p"}); if(p&&p.catch) p.catch(()=>{}) }catch(e){} }
 function setLogs(m){
   const todos=Object.keys(m).filter(k=>k.indexOf("log_")===0&&m[k]&&m[k].t).map(k=>({k:k,v:m[k]}));
-  logs=todos.map(o=>o.v).sort((a,b)=>b.t-a.t);
+  logs=todos.map(o=>o.v).filter(v=>v.b==="p").sort((a,b)=>b.t-a.t);
   if(db&&!logsLimpios){ logsLimpios=true; const lim=Date.now()-30*864e5; todos.filter(o=>o.v.t<lim).slice(0,20).forEach(o=>{try{const p=db.doc("revisiones/"+o.k).delete(); if(p&&p.catch) p.catch(()=>{})}catch(e){}}) }
 }
 function hace(t){const s=Math.round((Date.now()-t)/1000); if(s<60) return "hace un momento"; const m=Math.round(s/60); if(m<60) return "hace "+m+" min"; const h=Math.round(m/60); if(h<24) return "hace "+h+" h"; const d=Math.round(h/24); return d===1?"ayer":"hace "+d+" días"}
