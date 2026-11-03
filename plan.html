@@ -303,14 +303,23 @@ function find(id){return all().find(t=>t.id===id)}
 
 /* ---------- aviso por correo (EmailJS) ---------- */
 const MAIL={service:"service_17m50za",template:"template_kd8gmc5",key:"wGnQZMpelzHqLGqrs"};
-async function avisar(nombre,tarea,tablero,fecha){
-  const R=ROLES.find(r=>r[0]===nombre); if(!R) return; const to=R[2];
+const ALIAS="areaseguridad@wposs.com";
+const escH=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LINK=()=>location.href.split("#")[0].split("?")[0];
+async function enviar(to,asunto,texto,extra){
   try{
     const r=await fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({service_id:MAIL.service,template_id:MAIL.template,user_id:MAIL.key,
-        template_params:{to_email:to,responsable:R[1],tarea:tarea,tablero:tablero,fecha:fecha||"Sin fecha",enlace:location.href.split("#")[0]}})});
-    toast(r.ok?"Aviso enviado a "+to:"No se pudo enviar el aviso por correo");
-  }catch(e){toast("No se pudo enviar el aviso por correo")}
+        template_params:Object.assign({to_email:to,asunto:asunto,mensaje:escH(texto).replace(/\n/g,"<br>")},extra||{})})});
+    return r.ok;
+  }catch(e){return false}
+}
+async function avisar(nombre,tarea,tablero,fecha){
+  const R=ROLES.find(r=>r[0]===nombre); if(!R) return; const to=R[2];
+  const f=fecha?fmt(fecha):"Sin fecha";
+  const ok=await enviar(to,"Nueva tarea asignada: "+tarea,"Hola,\n\nSe te asignó una tarea como "+R[0]+" en el "+tablero+":\n"+tarea+"\n\nFecha: "+f+"\nÁbrela aquí: "+LINK(),
+    {responsable:R[0],tarea:tarea,tablero:tablero,fecha:f,enlace:LINK()});
+  toast(ok?"Aviso enviado a "+to:"No se pudo enviar el aviso por correo");
 }
 function trimOf(f){if(!f)return "";const[y,m]=f.split("-").map(Number);return "T"+Math.ceil(m/3)+"-"+y}
 
