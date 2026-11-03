@@ -56,6 +56,7 @@ td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
 tr:last-child td{border-bottom:0}
 td.name{min-width:320px;max-width:420px}
 .nm{font-weight:600}
+.nm .n{font-family:var(--f-mono);color:var(--muted);font-weight:500}
 .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;align-items:center}
 .tag{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
 .tag.who{background:transparent;border:1px solid var(--line);color:var(--muted)}
@@ -132,8 +133,7 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
 
   <div class="toolbar">
     <div class="seg" role="group" aria-label="Norma" id="segNorma">
-      <button type="button" data-v="" aria-pressed="true">Todas</button>
-      <button type="button" data-v="ISO" aria-pressed="false">ISO 27001</button>
+      <button type="button" data-v="ISO" aria-pressed="true">ISO 27001</button>
       <button type="button" data-v="PCI" aria-pressed="false">PCI DSS</button>
     </div>
     <input type="search" id="q" placeholder="Buscar control" aria-label="Buscar control">
@@ -318,8 +318,12 @@ function all(){
   return out;
 }
 function find(id){return all().find(x=>x.id===id)}
+const PREF=/^\s*(\d+)\.\s*/;
+function numOf(c){ if(c.num!=null&&c.num!=="") return +c.num; const m=PREF.exec(c.n||""); return m?+m[1]:0 }
+function nombre(c){ return String(c.n||"").replace(PREF,"") }
+function sigNum(){ return Math.max(0,...all().map(numOf))+1 }
 let db=null, store="";
-const st={norma:"",q:"",o:"",hechas:false,estado:""};
+const st={norma:"ISO",q:"",o:"",hechas:false,estado:""};
 
 function eff(c){
   const o=ov[c.id];
@@ -346,9 +350,9 @@ function visible(){
     if(st.o && c.o!==st.o) return false;
     if(c.f==="U" && !st.hechas && eff(c).hecha) return false;
     if(st.norma && c.norma.indexOf(st.norma)<0) return false;
-    if(st.q){const t=(c.n+" "+(c.ref||"")+" "+(c.nota||"")).toLowerCase(); if(t.indexOf(st.q.toLowerCase())<0) return false}
+    if(st.q){const t=(numOf(c)+" "+c.n+" "+(c.ref||"")+" "+(c.nota||"")).toLowerCase(); if(t.indexOf(st.q.toLowerCase())<0) return false}
     return true;
-  }).map(c=>({c:c,e:eff(c)})).sort((a,b)=>(a.e.prox||"9999")<(b.e.prox||"9999")?-1:1);
+  }).map(c=>({c:c,e:eff(c)})).sort((a,b)=>numOf(b.c)-numOf(a.c));
 }
 
 function render(){
@@ -376,7 +380,7 @@ function render(){
         '<span class="l">'+(e.ult?'Última: '+fmt(e.ult):'Sin revisión registrada')+'</span>'+
         '<button type="button" data-id="'+c.id+'">Marcar revisado</button></div></td>';
     }).join("");
-    return '<tr><td class="name"><div class="nm">'+esc(c.n)+'</div><div class="meta">'+tags+'</div><div class="note">'+esc(c.nota||"")+'</div><div class="rowact"><button type="button" data-ed="'+c.id+'">Editar</button><button type="button" class="del" data-del="'+c.id+'">Eliminar</button></div></td><td data-f="Responsable"><select class="own" data-own="'+c.id+'" aria-label="Responsable">'+Object.keys(NOMBRES).map(k=>'<option value="'+k+'"'+(k===c.o?' selected':'')+'>'+NOMBRES[k]+'</option>').join("")+'</select></td>'+cells+'</tr>';
+    return '<tr><td class="name"><div class="nm"><span class="n">'+numOf(c)+'.</span> '+esc(nombre(c))+'</div><div class="meta">'+tags+'</div><div class="note">'+esc(c.nota||"")+'</div><div class="rowact"><button type="button" data-ed="'+c.id+'">Editar</button><button type="button" class="del" data-del="'+c.id+'">Eliminar</button></div></td><td data-f="Responsable"><select class="own" data-own="'+c.id+'" aria-label="Responsable">'+Object.keys(NOMBRES).map(k=>'<option value="'+k+'"'+(k===c.o?' selected':'')+'>'+NOMBRES[k]+'</option>').join("")+'</select></td>'+cells+'</tr>';
   }).join("");
   document.getElementById("empty").hidden=list.length>0;
   document.querySelector("table").hidden=list.length===0;
@@ -450,7 +454,7 @@ function renderHoy(){
 }
 {const _r=render; render=function(){_r.apply(this,arguments); renderHoy()}}
 setInterval(renderHoy,60000);
-function hoyItems(){return all().map(c=>({c:c,e:eff(c)})).filter(x=>!x.e.hecha&&x.e.prox).map(x=>({t:x.c.n,d:diff(TODAY,x.e.prox)}))}
+function hoyItems(){return all().map(c=>({c:c,e:eff(c)})).filter(x=>!x.e.hecha&&x.e.prox).map(x=>({t:numOf(x.c)+". "+nombre(x.c),d:diff(TODAY,x.e.prox)}))}
 function toast(t){const el=document.getElementById("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{el.hidden=true},2600)}
 function lsRead(k){try{const v=localStorage.getItem(k+"-"+PERSONA);return v?JSON.parse(v):{}}catch(e){return {}}}
 function lsWrite(){try{localStorage.setItem("rev-"+PERSONA,JSON.stringify(ov));localStorage.setItem("act-"+PERSONA,JSON.stringify(act))}catch(e){}}
@@ -521,7 +525,7 @@ function openAdd(id){
   fillCat();
   if(c){
     const e=eff(c);
-    $("aN").value=c.n; $("aF").value=c.f; $("aO").value=c.o; $("aNorma").value=c.norma;
+    $("aN").value=nombre(c); $("aF").value=c.f; $("aO").value=c.o; $("aNorma").value=c.norma;
     $("aRef").value=c.ref||""; $("aUlt").value=e.ult||""; $("aProx").value=e.prox; $("aNota").value=c.nota||""; $("aMsg").value=c.msg||"";
   }else{
     $("aN").value=""; $("aF").value="A"; $("aO").value="N"; $("aNorma").value="ISO";
@@ -539,8 +543,8 @@ $("aCancel").addEventListener("click",()=>dlgA.close());
 $("btnAdd").addEventListener("click",()=>openAdd());
 $("frmA").addEventListener("submit",async ev=>{
   ev.preventDefault();
-  const n=$("aN").value.trim(), prox=$("aProx").value; if(!n||!prox) return;
-  const rec={n:n,norma:$("aNorma").value,ref:$("aRef").value.trim(),f:$("aF").value,o:$("aO").value,nota:$("aNota").value.trim(),msg:$("aMsg").value.trim(),prox:prox,ult:$("aUlt").value||null};
+  const n=$("aN").value.trim().replace(/^\s*\d+\.\s*/,""), prox=$("aProx").value; if(!n||!prox) return;
+  const prev=editId?find(editId):null; const rec={n:n,num:(prev&&numOf(prev)?numOf(prev):sigNum()),norma:$("aNorma").value,ref:$("aRef").value.trim(),f:$("aF").value,o:$("aO").value,nota:$("aNota").value.trim(),msg:$("aMsg").value.trim(),prox:prox,ult:$("aUlt").value||null};
   let id=editId;
   if(!id){ id="x"+Date.now().toString(36); rec.custom=true; }
   else if(act[id]&&act[id].custom) rec.custom=true;
