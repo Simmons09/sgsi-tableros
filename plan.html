@@ -123,6 +123,18 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
 @media (max-width:520px){.row3{grid-template-columns:1fr}}
 
 
+.hoy{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin:0 0 16px}
+.hoyc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.hoyc h2{font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.hoyc ul{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:13.5px}
+.hoyc li{display:flex;gap:8px;align-items:baseline;min-width:0}
+.hoyc li .tx{flex:1;min-width:0;overflow-wrap:anywhere}
+.hoyc time{color:var(--muted);font-size:12px;white-space:nowrap}
+.hoyc .vacio{color:var(--muted);font-size:13px}
+.hoyn{display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:8px;font-size:13px;font-weight:600}
+.tg{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;white-space:nowrap;min-width:72px;text-align:center}
+.tg.venc{background:var(--late-bg);color:var(--late)} .tg.hoy{background:var(--soon-bg);color:var(--soon)} .tg.prox{background:var(--ok-bg);color:var(--ok)}
+@media (max-width:720px){.hoy{grid-template-columns:1fr}}
 </style><link rel="stylesheet" href="fondo.css">
 
 <div class="wrap">
@@ -134,6 +146,7 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
     </div>
     <div class="summary" id="summary" role="group" aria-label="Filtrar por estado"></div>
   </header>
+  <section class="hoy" id="hoy" aria-label="Resumen de hoy"></section>
   <div class="toolbar">
     <input type="search" id="q" placeholder="Buscar tarea" aria-label="Buscar tarea">
     <select id="fResp" aria-label="Responsable"><option value="">Todos los responsables</option></select>
@@ -233,7 +246,7 @@ const FB={
         doc:p=>({set:v=>FS.setDoc(FS.doc(fs,p),v),delete:()=>FS.deleteDoc(FS.doc(fs,p))}),
         collection:n=>({onSnapshot:(ok,err)=>FS.onSnapshot(FS.collection(fs,n),ok,e=>{ if(e&&e.code==="permission-denied"){ $("login").hidden=false; msg("Tu correo ("+u.email+") no tiene acceso. Pide a Brayner que lo agregue.",1) } err&&err(e) })})
       };
-      window.FBDB=db; onReady(db);
+      window.FBDB=db; window.FBUSER=u.email; onReady(db);
     });
   }
 };
@@ -321,6 +334,30 @@ async function avisar(nombre,tarea,tablero,fecha){
     {responsable:R[0],tarea:tarea,tablero:tablero,fecha:f,enlace:LINK()});
   toast(ok?"Aviso enviado a "+to:"No se pudo enviar el aviso por correo");
 }
+/* ---------- resumen de hoy y novedades ---------- */
+const QUIEN={"braynerflorez@wposs.com":"Oficial de Seguridad","laurasepulveda@wposs.com":"Oficial de Cumplimiento","yeslymontaguth@wposs.com":"Analista de Seguridad"};
+let logs=[], logsLimpios=false;
+function logEvt(x){ if(!db) return; const k="log_"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  try{ const p=db.doc("revisiones/"+k).set({t:Date.now(),u:QUIEN[String(window.FBUSER||"").toLowerCase()]||"Alguien",x:x}); if(p&&p.catch) p.catch(()=>{}) }catch(e){} }
+function setLogs(m){
+  const todos=Object.keys(m).filter(k=>k.indexOf("log_")===0&&m[k]&&m[k].t).map(k=>({k:k,v:m[k]}));
+  logs=todos.map(o=>o.v).sort((a,b)=>b.t-a.t);
+  if(db&&!logsLimpios){ logsLimpios=true; const lim=Date.now()-30*864e5; todos.filter(o=>o.v.t<lim).slice(0,20).forEach(o=>{try{const p=db.doc("revisiones/"+o.k).delete(); if(p&&p.catch) p.catch(()=>{})}catch(e){}}) }
+}
+function hace(t){const s=Math.round((Date.now()-t)/1000); if(s<60) return "hace un momento"; const m=Math.round(s/60); if(m<60) return "hace "+m+" min"; const h=Math.round(m/60); if(h<24) return "hace "+h+" h"; const d=Math.round(h/24); return d===1?"ayer":"hace "+d+" días"}
+function renderHoy(){
+  const el=document.getElementById("hoy"); if(!el) return;
+  const it=hoyItems(), hoy=it.filter(x=>x.d===0), venc=it.filter(x=>x.d<0).sort((a,b)=>b.d-a.d), prox=it.filter(x=>x.d>0&&x.d<=2).sort((a,b)=>a.d-b.d);
+  const lista=[].concat(hoy.map(x=>["hoy","Hoy",x]),prox.map(x=>["prox",x.d===1?"Mañana":"En "+x.d+" días",x]),venc.map(x=>["venc","Vencido",x]));
+  const li=lista.slice(0,4).map(r=>'<li><span class="tg '+r[0]+'">'+r[1]+'</span><span class="tx">'+esc(r[2].t)+'</span></li>').join("");
+  const mas=lista.length>4?'<div class="vacio" style="margin-top:6px">y '+(lista.length-4)+' más</div>':"";
+  const lim=Date.now()-14*864e5, nv=logs.filter(l=>l.t>=lim).slice(0,5);
+  el.innerHTML='<div class="hoyc"><h2>Lo de hoy</h2><div class="hoyn"><span>'+hoy.length+' vencen hoy</span><span>'+prox.length+' en 2 días</span><span>'+venc.length+' vencidos</span></div>'+(li?'<ul>'+li+'</ul>'+mas:'<div class="vacio">Nada vence hoy ni en los próximos 2 días.</div>')+'</div>'
+   +'<div class="hoyc"><h2>Novedades</h2>'+(nv.length?'<ul>'+nv.map(l=>'<li><span class="tx"><b>'+esc(l.u)+'</b> '+esc(l.x)+'</span><time>'+hace(l.t)+'</time></li>').join("")+'</ul>':'<div class="vacio">Aún no hay movimientos.</div>')+'</div>';
+}
+{const _r=render; render=function(){_r.apply(this,arguments); renderHoy()}}
+setInterval(renderHoy,60000);
+function hoyItems(){return all().filter(t=>t.est!=="Ejecutada"&&vig(t)).map(t=>({t:t.n+". "+t.act,d:days(vig(t))}))}
 function trimOf(f){if(!f)return "";const[y,m]=f.split("-").map(Number);return "T"+Math.ceil(m/3)+"-"+y}
 
 const F={act:"fAct",ent:"fEnt",resp:"fRes",apo:"fApo",pri:"fPr",est:"fEst",dur:"fDur",ini:"fIni",fin:"fFin",rep:"fRep",tri:"fTr",real:"fReal",evi:"fEvi",obs:"fObs"};
@@ -343,19 +380,19 @@ $("frm").addEventListener("submit",async ev=>{
   if(cur){id=cur.id;n=cur.n}else{n=Math.max(0,...all().map(t=>t.n||0))+1;id="x"+Date.now()}
   $("dlg").close();
   const antes=cur?cur.resp:"";
-  if(await put(id,Object.assign({id:id,n:n},r))){ toast("Guardado"); if(r.resp&&r.resp!==antes) avisar(r.resp,"Tarea "+n+": "+r.act,"Plan de Trabajo SGSI",r.fin||r.rep) }
+  if(await put(id,Object.assign({id:id,n:n},r))){ toast("Guardado"); logEvt(cur?"editó la tarea "+n:"creó la tarea "+n+": "+r.act); if(r.resp&&r.resp!==antes) avisar(r.resp,"Tarea "+n+": "+r.act,"Plan de Trabajo SGSI",r.fin||r.rep) }
 });
 $("bCan").onclick=()=>$("dlg").close();
 $("bDel").onclick=()=>{$("dlg").close();$("dDelTxt").textContent="Se quitará la tarea "+cur.n+" del tablero para todos.";$("dlgD").showModal()};
 $("dNo").onclick=()=>$("dlgD").close();
-$("dYes").onclick=async()=>{const id=cur.id;$("dlgD").close();if(await put(id,{borrada:true})) toast("Tarea eliminada")};
+$("dYes").onclick=async()=>{const id=cur.id;$("dlgD").close();if(await put(id,{borrada:true})){ toast("Tarea eliminada"); logEvt("eliminó la tarea "+cur.n) }};
 $("btnAdd").onclick=()=>openDlg(null);
 $("rows").addEventListener("click",ev=>{const b=ev.target.closest("[data-ed]"); if(b) openDlg(b.dataset.ed)});
 $("rows").addEventListener("change",async ev=>{
   const s=ev.target.closest("[data-est]"); if(!s) return;
   const t=find(s.dataset.est); const est=s.value;
   const upd=Object.assign({},t,{est:est,real:est==="Ejecutada"?(t.real||TODAY):""});
-  if(await put(t.id,upd)) toast("Estado actualizado"); else render();
+  if(await put(t.id,upd)){ toast("Estado actualizado"); logEvt(est==="Ejecutada"?"completó la tarea "+t.n:"pasó la tarea "+t.n+" a «"+est+"»") } else render();
 });
 $("summary").addEventListener("click",ev=>{const b=ev.target.closest("[data-f]"); if(!b) return; st.f=st.f===b.dataset.f?"":b.dataset.f; render()});
 $("q").addEventListener("input",ev=>{st.q=ev.target.value; render()});
@@ -366,6 +403,7 @@ $("fPri").addEventListener("change",ev=>{st.p=ev.target.value; render()});
 render();
 FB.start(d=>{
   db=d;
+  db.collection("revisiones").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); setLogs(m); renderHoy()},()=>{});
   db.collection("plan").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); ov=m; render()},()=>{});
 });
 </script>
