@@ -135,6 +135,7 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
 .tg{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;white-space:nowrap;min-width:72px;text-align:center}
 .tg.venc{background:var(--late-bg);color:var(--late)} .tg.hoy{background:var(--soon-bg);color:var(--soon)} .tg.prox{background:var(--ok-bg);color:var(--ok)}
 @media (max-width:720px){.hoy{grid-template-columns:1fr}}
+.hdr-r{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:10px}.navbtn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:13px;text-decoration:none;font-family:inherit}.navbtn:hover{filter:brightness(1.08)}@media (max-width:720px){.hdr-r{align-items:flex-start;margin-left:0}}
 </style><link rel="stylesheet" href="fondo.css">
 
 <div class="wrap">
@@ -144,7 +145,7 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
       <h1>Plan de Trabajo SGSI</h1>
       <p class="sub">Tareas de seguridad de la información (SI-PLA-008). Cambia el estado desde la fila, reprograma fechas, agrega tareas nuevas o edita cualquier columna.</p>
     </div>
-    <div class="summary" id="summary" role="group" aria-label="Filtrar por estado"></div>
+    <div class="hdr-r"><a class="navbtn" href="controles.html">Ir a Controles →</a><div class="summary" id="summary" role="group" aria-label="Filtrar por estado"></div></div>
   </header>
   <section class="hoy" id="hoy" aria-label="Resumen de hoy"></section>
   <div class="toolbar">
