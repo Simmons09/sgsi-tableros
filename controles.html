@@ -118,6 +118,7 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
 .tg{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;white-space:nowrap;min-width:72px;text-align:center}
 .tg.venc{background:var(--late-bg);color:var(--late)} .tg.hoy{background:var(--soon-bg);color:var(--soon)} .tg.prox{background:var(--ok-bg);color:var(--ok)}
 @media (max-width:720px){.hoy{grid-template-columns:1fr}}
+.hdr-r{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:10px}.navbtn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:13px;text-decoration:none;font-family:inherit}.navbtn:hover{filter:brightness(1.08)}@media (max-width:720px){.hdr-r{align-items:flex-start;margin-left:0}}
 </style><link rel="stylesheet" href="fondo.css">
 
 <div class="wrap">
@@ -127,7 +128,7 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
       <h1>Controles</h1>
       <p class="sub">Controles periódicos de ISO 27001 y PCI DSS. Cada fila lleva su fecha y su responsable, y se puede cambiar.</p>
     </div>
-    <div class="summary" id="summary" role="group" aria-label="Filtrar por estado"></div>
+    <div class="hdr-r"><a class="navbtn" href="plan.html">Ir a Plan →</a><div class="summary" id="summary" role="group" aria-label="Filtrar por estado"></div></div>
   </header>
   <section class="hoy" id="hoy" aria-label="Resumen de hoy"></section>
 
