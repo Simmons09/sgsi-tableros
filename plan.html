@@ -150,6 +150,7 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
   <section class="hoy" id="hoy" aria-label="Resumen de hoy"></section>
   <div class="toolbar">
     <input type="search" id="q" placeholder="Buscar tarea" aria-label="Buscar tarea">
+    <select id="fMes" aria-label="Mes"></select>
     <select id="fResp" aria-label="Responsable"><option value="">Todos los responsables</option></select>
     <select id="fTri" aria-label="Trimestre"><option value="">Todos los trimestres</option></select>
     <select id="fPri" aria-label="Prioridad"><option value="">Toda prioridad</option><option>Alta</option><option>Media</option><option>Baja</option></select>
@@ -162,7 +163,7 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
     </table>
     <div class="empty-state" id="empty" hidden>Ninguna tarea coincide con este filtro.</div>
   </div>
-  <footer>Los cambios se guardan para todas las personas con permiso de edición. Una tarea sin ejecutar pasa a rojo cuando vence su fecha vigente (la reprogramada si existe) y a ámbar 15 días antes.</footer>
+  <footer>Los cambios se guardan para todas las personas con permiso de edición. Vista mensual: las pendientes y en ejecución siguen vigentes en cada mes; las ejecutadas quedan archivadas en el mes en que se ejecutaron (se consultan en el selector de mes). Una tarea sin ejecutar pasa a rojo cuando vence su fecha vigente (la reprogramada si existe) y a ámbar 15 días antes.</footer>
 </div>
 
 <dialog id="dlg" class="wide">
@@ -261,7 +262,7 @@ const TODAY=(()=>{const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()
 const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 const fmt=s=>{if(!s)return "";const[y,m,d]=s.split("-").map(Number);return d+" "+MES[m-1]+" "+y};
 const days=s=>Math.round((new Date(s+"T00:00:00")-new Date(TODAY+"T00:00:00"))/864e5);
-let db=null, ov={}, st={f:"",q:"",r:"",t:"",p:""}, cur=null;
+let db=null, ov={}, st={f:"",q:"",r:"",t:"",p:"",m:"cur"}, cur=null;
 const ROLES=[["Oficial de Seguridad de la Información","Brayner","braynerflorez@wposs.com"],["Oficial de Cumplimiento","Laura","laurasepulveda@wposs.com"],["Analista de Seguridad","Yesly","yeslymontaguth@wposs.com"]];
 const PROCS=["Seguridad de la Información","Desarrollo de Software","Operaciones","Gestión Financiera","Gestión de Mesa de Ayuda","Gestión del Talento Humano","Gestión Comercial","Soporte Interno","Estrategia Corporativa","Gestión de la Infraestructura Tecnológica","Gestión de Proyectos","QA","Todos los procesos"];
 function normR(v){const s=String(v||"").trim(); if(!s) return ""; const l=s.toLowerCase();
@@ -275,6 +276,17 @@ function all(){
   L.forEach((t,i)=>{t.num=i+1});
   return L.reverse();
 }
+const MESL=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function mesDe(t){return (t.real||t.fin||TODAY).slice(0,7)}
+function mesTxt(k){const[y,m]=k.split("-").map(Number);return MESL[m-1]+" "+y}
+/* Vista mensual: las pendientes y en ejecución siempre siguen vigentes; las ejecutadas se archivan en el mes en que se ejecutaron. */
+function enMes(t){
+  const cm=TODAY.slice(0,7);
+  if(st.m==="all") return true;
+  const m=st.m==="cur"?cm:st.m;
+  if(t.est==="Ejecutada") return mesDe(t)===m;
+  return m===cm;
+}
 function vig(t){return t.rep||t.fin||""}
 function sem(t){ if(t.est==="Ejecutada") return "ok"; const f=vig(t); if(!f) return ""; const d=days(f); return d<0?"late":d<=15?"soon":""; }
 function matches(t){
@@ -284,12 +296,15 @@ function matches(t){
   return true;
 }
 function render(){
-  const L=all();
+  const L0=all(), L=L0.filter(enMes);
   $("today").textContent="Hoy · "+fmt(TODAY);
   const c={late:0,soon:0,Pendiente:0,"En ejecución":0,Ejecutada:0};
   L.forEach(t=>{c[t.est]=(c[t.est]||0)+1; const s=sem(t); if(s==="late"||s==="soon") c[s]++});
   const pills=[["","Todas",L.length,""],["late","Vencidas",c.late,"late"],["soon","Próximas",c.soon,"soon"],["Pendiente","Pendientes",c.Pendiente,""],["En ejecución","En ejecución",c["En ejecución"],""],["Ejecutada","Ejecutadas",c.Ejecutada,"ok"]];
   $("summary").innerHTML=pills.map(p=>'<button type="button" class="pill '+p[3]+'" data-f="'+p[0]+'" aria-pressed="'+(st.f===p[0])+'" style="'+(st.f===p[0]?"outline:2px solid var(--accent)":"")+'">'+p[1]+' <b>'+p[2]+'</b></button>').join("");
+  const cm=TODAY.slice(0,7), ms=[...new Set(L0.filter(t=>t.est==="Ejecutada").map(mesDe).filter(k=>k!==cm))].sort().reverse();
+  $("fMes").innerHTML='<option value="cur">Mes actual · '+mesTxt(cm)+'</option>'+ms.map(k=>'<option value="'+k+'">Ejecutadas en '+mesTxt(k)+'</option>').join("")+'<option value="all">Todo el historial</option>';
+  $("fMes").value=st.m;
   const rs=[...new Set(L.map(t=>t.resp).filter(Boolean))].sort(), ts=[...new Set(L.map(t=>t.tri).filter(Boolean))].sort();
   fill("fResp",rs,"Todos los responsables",st.r); fill("fTri",ts,"Todos los trimestres",st.t);
   const list=L.filter(matches);
@@ -399,6 +414,7 @@ $("rows").addEventListener("change",async ev=>{
 });
 $("summary").addEventListener("click",ev=>{const b=ev.target.closest("[data-f]"); if(!b) return; st.f=st.f===b.dataset.f?"":b.dataset.f; render()});
 $("q").addEventListener("input",ev=>{st.q=ev.target.value; render()});
+$("fMes").addEventListener("change",ev=>{st.m=ev.target.value; st.f=""; render()});
 $("fResp").addEventListener("change",ev=>{st.r=ev.target.value; render()});
 $("fTri").addEventListener("change",ev=>{st.t=ev.target.value; render()});
 $("fPri").addEventListener("change",ev=>{st.p=ev.target.value; render()});
