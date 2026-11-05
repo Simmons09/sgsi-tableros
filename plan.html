@@ -143,7 +143,7 @@ select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendien
     <div>
       <div class="today" id="today"></div>
       <h1>Plan de Trabajo SGSI</h1>
-      <p class="sub">Tareas de seguridad de la información (SI-PLA-008). Cambia el estado desde la fila, reprograma fechas, agrega tareas nuevas o edita cualquier columna.</p>
+      <p class="sub">Tareas de seguridad de la información (SI-PLA-004-V1). Cambia el estado desde la fila, reprograma fechas, agrega tareas nuevas o edita cualquier columna.</p>
     </div>
     <div class="hdr-r"><a class="navbtn" href="controles.html">Ir a Controles →</a><div class="summary" id="summary" role="group" aria-label="Filtrar por estado"></div></div>
   </header>
@@ -271,7 +271,9 @@ function normR(v){const s=String(v||"").trim(); if(!s) return ""; const l=s.toLo
 function all(){
   const m={}; DATA.forEach(d=>m[d.id]=d);
   Object.keys(ov).forEach(k=>{const v=ov[k]; if(v&&v.borrada) delete m[k]; else if(v) m[k]=Object.assign({},m[k]||{},v)});
-  return Object.values(m).map(t=>Object.assign({},t,{resp:normR(t.resp)})).sort((a,b)=>(b.n||0)-(a.n||0));
+  const L=Object.values(m).map(t=>Object.assign({},t,{resp:normR(t.resp)})).sort((a,b)=>(a.n||0)-(b.n||0));
+  L.forEach((t,i)=>{t.num=i+1});
+  return L.reverse();
 }
 function vig(t){return t.rep||t.fin||""}
 function sem(t){ if(t.est==="Ejecutada") return "ok"; const f=vig(t); if(!f) return ""; const d=days(f); return d<0?"late":d<=15?"soon":""; }
@@ -295,7 +297,7 @@ function render(){
     const s=sem(t);
     const reprog=t.rep?'<span class="dt '+s+'">'+fmt(t.rep)+'</span>':'<span class="dt" style="color:var(--line)">—</span>';
     const f=(l,v,c)=>v?'<b>'+l+'</b><span class="dt '+(c||"")+'">'+v+'</span>':"";
-    return '<tr><td class="name" data-f="Actividad"><div class="nm"><span class="n">'+t.n+'.</span> '+esc(t.act)+'</div>'+(t.ent?'<div class="note">'+esc(t.ent)+'</div>':'')+(t.evi?'<div class="note">Evidencia: '+esc(t.evi)+'</div>':'')+(t.obs?'<div class="note">Obs.: '+esc(t.obs)+'</div>':'')+'<div class="rowact"><button type="button" data-ed="'+t.id+'">Editar</button></div></td>'+
+    return '<tr><td class="name" data-f="Actividad"><div class="nm"><span class="n">'+t.num+'.</span> '+esc(t.act)+'</div>'+(t.ent?'<div class="note">'+esc(t.ent)+'</div>':'')+(t.evi?'<div class="note">Evidencia: '+esc(t.evi)+'</div>':'')+(t.obs?'<div class="note">Obs.: '+esc(t.obs)+'</div>':'')+'<div class="rowact"><button type="button" data-ed="'+t.id+'">Editar</button></div></td>'+
     '<td data-f="Responsable">'+esc(t.resp)+(t.apo?'<div class="note">Apoyo: '+esc(t.apo)+'</div>':'')+'</td>'+
     '<td data-f="Prioridad"><span class="pri '+esc(t.pri)+'">'+esc(t.pri)+'</span><div class="note">'+esc(t.tri)+(t.dur?' · '+esc(t.dur):'')+'</div></td>'+
     '<td data-f="Fechas"><div class="fechas">'+f("Inicio",fmt(t.ini))+f("Fin",fmt(t.fin),t.rep?"":s)+f("Reprog.",fmt(t.rep),s)+f("Real",fmt(t.real))+'</div></td>'+
@@ -358,14 +360,14 @@ function renderHoy(){
 }
 {const _r=render; render=function(){_r.apply(this,arguments); renderHoy()}}
 setInterval(renderHoy,60000);
-function hoyItems(){return all().filter(t=>t.est!=="Ejecutada"&&vig(t)).map(t=>({t:t.n+". "+t.act,d:days(vig(t))}))}
+function hoyItems(){return all().filter(t=>t.est!=="Ejecutada"&&vig(t)).map(t=>({t:t.num+". "+t.act,d:days(vig(t))}))}
 function trimOf(f){if(!f)return "";const[y,m]=f.split("-").map(Number);return "T"+Math.ceil(m/3)+"-"+y}
 
 const F={act:"fAct",ent:"fEnt",resp:"fRes",apo:"fApo",pri:"fPr",est:"fEst",dur:"fDur",ini:"fIni",fin:"fFin",rep:"fRep",tri:"fTr",real:"fReal",evi:"fEvi",obs:"fObs"};
 function openDlg(id){
   cur=id?find(id):null;
   const t=cur||{pri:"Alta",est:"Pendiente",ini:TODAY};
-  $("dTitle").textContent=cur?"Tarea "+cur.n:"Nueva tarea";
+  $("dTitle").textContent=cur?"Tarea "+cur.num:"Nueva tarea";
   $("dSub").textContent=cur?"Edita lo que haga falta; al guardar queda para todos.":"Completa lo que sepas; el resto lo puedes editar después.";
   Object.keys(F).forEach(k=>{if(k==="resp"){const s=$(F[k]);[...s.querySelectorAll("option[data-old]")].forEach(o=>o.remove());if(t.resp&&![...s.options].some(o=>o.value===t.resp)){const o=document.createElement("option");o.value=o.textContent=t.resp;o.dataset.old="1";s.appendChild(o)}}$(F[k]).value=t[k]||""});
   $("bDel").hidden=!cur; $("dlg").showModal();
@@ -378,22 +380,22 @@ $("frm").addEventListener("submit",async ev=>{
   if(r.est==="Ejecutada"&&!r.real) r.real=TODAY;
   if(r.est!=="Ejecutada") r.real=r.real&&cur&&cur.est==="Ejecutada"?"":r.real;
   let id,n;
-  if(cur){id=cur.id;n=cur.n}else{n=Math.max(0,...all().map(t=>t.n||0))+1;id="x"+Date.now()}
+  let num; if(cur){id=cur.id;n=cur.n;num=cur.num}else{n=Math.max(0,...all().map(t=>t.n||0))+1;num=all().length+1;id="x"+Date.now()}
   $("dlg").close();
   const antes=cur?cur.resp:"";
-  if(await put(id,Object.assign({id:id,n:n},r))){ toast("Guardado"); logEvt(cur?"editó la tarea "+n:"creó la tarea "+n+": "+r.act); if(r.resp&&r.resp!==antes) avisar(r.resp,"Tarea "+n+": "+r.act,"Plan de Trabajo SGSI",r.fin||r.rep) }
+  if(await put(id,Object.assign({id:id,n:n},r))){ toast("Guardado"); logEvt(cur?"editó la tarea "+num:"creó la tarea "+num+": "+r.act); if(r.resp&&r.resp!==antes) avisar(r.resp,"Tarea "+num+": "+r.act,"Plan de Trabajo SGSI",r.fin||r.rep) }
 });
 $("bCan").onclick=()=>$("dlg").close();
-$("bDel").onclick=()=>{$("dlg").close();$("dDelTxt").textContent="Se quitará la tarea "+cur.n+" del tablero para todos.";$("dlgD").showModal()};
+$("bDel").onclick=()=>{$("dlg").close();$("dDelTxt").textContent="Se quitará la tarea "+cur.num+" del tablero para todos.";$("dlgD").showModal()};
 $("dNo").onclick=()=>$("dlgD").close();
-$("dYes").onclick=async()=>{const id=cur.id;$("dlgD").close();if(await put(id,{borrada:true})){ toast("Tarea eliminada"); logEvt("eliminó la tarea "+cur.n) }};
+$("dYes").onclick=async()=>{const id=cur.id;$("dlgD").close();if(await put(id,{borrada:true})){ toast("Tarea eliminada"); logEvt("eliminó la tarea "+cur.num) }};
 $("btnAdd").onclick=()=>openDlg(null);
 $("rows").addEventListener("click",ev=>{const b=ev.target.closest("[data-ed]"); if(b) openDlg(b.dataset.ed)});
 $("rows").addEventListener("change",async ev=>{
   const s=ev.target.closest("[data-est]"); if(!s) return;
   const t=find(s.dataset.est); const est=s.value;
   const upd=Object.assign({},t,{est:est,real:est==="Ejecutada"?(t.real||TODAY):""});
-  if(await put(t.id,upd)){ toast("Estado actualizado"); logEvt(est==="Ejecutada"?"completó la tarea "+t.n:"pasó la tarea "+t.n+" a «"+est+"»") } else render();
+  if(await put(t.id,upd)){ toast("Estado actualizado"); logEvt(est==="Ejecutada"?"completó la tarea "+t.num:"pasó la tarea "+t.num+" a «"+est+"»") } else render();
 });
 $("summary").addEventListener("click",ev=>{const b=ev.target.closest("[data-f]"); if(!b) return; st.f=st.f===b.dataset.f?"":b.dataset.f; render()});
 $("q").addEventListener("input",ev=>{st.q=ev.target.value; render()});
