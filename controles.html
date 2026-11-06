@@ -72,6 +72,7 @@ td.name{min-width:320px;max-width:420px}
 td.empty{color:var(--line);text-align:center}
 .cell.none{background:var(--accent-soft);color:var(--muted)}
 select.own{font:inherit;font-size:13px;font-weight:600;padding:4px 8px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.ownm{position:relative;font-size:13px}.ownm summary{cursor:pointer;list-style:none;padding:4px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);font-weight:600;color:var(--ink)}.ownm summary::-webkit-details-marker{display:none}.ownm summary::after{content:" \25BE";color:var(--muted)}.ownm .ownl{margin-top:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px}.ownm label,.chks label{display:flex;gap:8px;align-items:center;padding:5px 6px;cursor:pointer;font-weight:500;font-size:13px}.chks{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;padding:4px;background:var(--surface);max-height:210px;overflow:auto}.chks .gl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:6px 6px 2px}
 .rowact{display:flex;gap:14px;margin-top:8px}
 .rowact button{font:inherit;font-size:12px;background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer}
 .rowact button:hover{color:var(--ink)} .rowact button.del:hover{color:var(--late)}
@@ -151,7 +152,7 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
 
   <div class="tablewrap">
     <table>
-      <thead><tr><th>Control</th><th>Responsable</th><th>Mensual</th><th>Trimestral</th><th>Semestral</th><th>Anual</th><th>Tarea única</th></tr></thead>
+      <thead><tr><th>Control</th><th>Responsables</th><th>Mensual</th><th>Trimestral</th><th>Semestral</th><th>Anual</th><th>Tarea única</th></tr></thead>
       <tbody id="rows"></tbody>
     </table>
     <div class="empty-state" id="empty" hidden>Ningún control coincide con este filtro.</div>
@@ -185,8 +186,7 @@ footer{color:var(--muted);font-size:12.5px;max-width:80ch}
     <div class="row2">
       <label class="field"><span>Frecuencia</span>
         <select id="aF"><option value="M">Mensual</option><option value="T">Trimestral</option><option value="S">Semestral</option><option value="A" selected>Anual</option><option value="U">Tarea única</option></select></label>
-      <label class="field"><span>Responsable</span>
-        <select id="aO"><option value="B">Oficial de Seguridad de la Información</option><option value="L">Oficial de Cumplimiento</option><option value="Y">Analista de Seguridad</option><option value="N">Sin asignar</option></select></label>
+      <div class="field"><span>Responsables (puedes elegir varios)</span><div class="chks" id="aO" role="group" aria-label="Responsables"><label><input type="checkbox" value="B"> Oficial de Seguridad de la Información</label><label><input type="checkbox" value="L"> Oficial de Cumplimiento</label><label><input type="checkbox" value="Y"> Analista de Seguridad</label></div></div>
     </div>
     <div class="row2">
       <label class="field"><span>Norma</span>
@@ -271,6 +271,13 @@ const FB={
 <script>
 const PERSONA="T";
 const NOMBRES={B:"Oficial de Seguridad de la Información",L:"Oficial de Cumplimiento",Y:"Analista de Seguridad",N:"Sin asignar"};
+/* responsables: texto con las letras de cada persona ("BL"); "N" = sin asignar. Compatible con lo ya guardado ("B", "L"…). */
+const ownCodes=o=>[...new Set(String(o||"").split("").filter(k=>k==="B"||k==="L"||k==="Y"))];
+const ownTxt=o=>{const a=ownCodes(o);return a.length?a.map(k=>NOMBRES[k]).join(", "):"Sin asignar"};
+const ownStr=a=>a.length?["B","L","Y"].filter(k=>a.includes(k)).join(""):"N";
+function getO(){return ownStr([...document.querySelectorAll("#aO input:checked")].map(i=>i.value))}
+function setO(o){const a=ownCodes(o);document.querySelectorAll("#aO input").forEach(i=>{i.checked=a.includes(i.value)})}
+let openOwn=null;
 const FREQ={M:{n:"Mensual",m:1},T:{n:"Trimestral",m:3},S:{n:"Semestral",m:6},A:{n:"Anual",m:12},U:{n:"Tarea única",m:0}};
 const COLS=["M","T","S","A","U"];
 const DATA=[];
@@ -348,7 +355,7 @@ function etiqueta(prox){
 
 function visible(){
   return all().filter(c=>{
-    if(st.o && c.o!==st.o) return false;
+    if(st.o){const a=ownCodes(c.o); if(st.o==="N"?a.length>0:!a.includes(st.o)) return false}
     if(c.f==="U" && !st.hechas && eff(c).hecha) return false;
     if(st.norma && c.norma.indexOf(st.norma)<0) return false;
     if(st.q){const t=(numOf(c)+" "+c.n+" "+(c.ref||"")+" "+(c.nota||"")).toLowerCase(); if(t.indexOf(st.q.toLowerCase())<0) return false}
@@ -381,7 +388,7 @@ function render(){
         '<span class="l">'+(e.ult?'Última: '+fmt(e.ult):'Sin revisión registrada')+'</span>'+
         '<button type="button" data-id="'+c.id+'">Marcar revisado</button></div></td>';
     }).join("");
-    return '<tr><td class="name"><div class="nm"><span class="n">'+numOf(c)+'.</span> '+esc(nombre(c))+'</div><div class="meta">'+tags+'</div><div class="note">'+esc(c.nota||"")+'</div><div class="rowact"><button type="button" data-ed="'+c.id+'">Editar</button><button type="button" class="del" data-del="'+c.id+'">Eliminar</button></div></td><td data-f="Responsable"><select class="own" data-own="'+c.id+'" aria-label="Responsable">'+Object.keys(NOMBRES).map(k=>'<option value="'+k+'"'+(k===c.o?' selected':'')+'>'+NOMBRES[k]+'</option>').join("")+'</select></td>'+cells+'</tr>';
+    return '<tr><td class="name"><div class="nm"><span class="n">'+numOf(c)+'.</span> '+esc(nombre(c))+'</div><div class="meta">'+tags+'</div><div class="note">'+esc(c.nota||"")+'</div><div class="rowact"><button type="button" data-ed="'+c.id+'">Editar</button><button type="button" class="del" data-del="'+c.id+'">Eliminar</button></div></td><td data-f="Responsable"><details class="ownm" data-own="'+c.id+'"'+(openOwn===c.id?' open':'')+'><summary>'+esc(ownTxt(c.o))+'</summary><div class="ownl">'+["B","L","Y"].map(k=>'<label><input type="checkbox" value="'+k+'"'+(ownCodes(c.o).includes(k)?' checked':'')+'> '+NOMBRES[k]+'</label>').join("")+'</div></details></td>'+cells+'</tr>';
   }).join("");
   document.getElementById("empty").hidden=list.length>0;
   document.querySelector("table").hidden=list.length===0;
@@ -426,7 +433,7 @@ async function recordatorios(){
     n++;
     const dias=diff(TODAY,e.prox), cuando=dias===0?"vence hoy":dias===1?"vence mañana":"vence en "+dias+" días";
     const base=(c.msg&&c.msg.trim())||("Hola, equipo de Seguridad.\n\nEl control «"+c.n+"» "+cuando+" ("+fmt(e.prox)+"). Hay que hacer la revisión.");
-    const texto=base+"\n\nFecha de vencimiento: "+fmt(e.prox)+"\nResponsable: "+NOMBRES[c.o]+"\nÁbrelo aquí: "+LINK();
+    const texto=base+"\n\nFecha de vencimiento: "+fmt(e.prox)+"\nResponsables: "+ownTxt(c.o)+"\nÁbrelo aquí: "+LINK();
     const ok=await enviar(ALIAS,"Vence pronto: "+c.n+" ("+fmt(e.prox)+")",texto,
       {responsable:"equipo de Seguridad",tarea:"Revisión de «"+c.n+"» ("+cuando+")",tablero:"tablero de Controles",fecha:fmt(e.prox),enlace:LINK()});
     if(ok) toast("Recordatorio enviado: "+c.n); else { try{await db.doc("revisiones/rem_"+c.id).delete()}catch(x){} }
@@ -526,17 +533,17 @@ function openAdd(id){
   fillCat();
   if(c){
     const e=eff(c);
-    $("aN").value=nombre(c); $("aF").value=c.f; $("aO").value=c.o; $("aNorma").value=c.norma;
+    $("aN").value=nombre(c); $("aF").value=c.f; setO(c.o); $("aNorma").value=c.norma;
     $("aRef").value=c.ref||""; $("aUlt").value=e.ult||""; $("aProx").value=e.prox; $("aNota").value=c.nota||""; $("aMsg").value=c.msg||"";
   }else{
-    $("aN").value=""; $("aF").value="A"; $("aO").value="N"; $("aNorma").value="ISO";
+    $("aN").value=""; $("aF").value="A"; setO("N"); $("aNorma").value="ISO";
     $("aRef").value=""; $("aUlt").value=""; $("aNota").value=""; $("aMsg").value=""; recalcProx();
   }
   dlgA.showModal(); $("aN").focus();
 }
 $("aCat").addEventListener("change",ev=>{
   const x=CAT[ev.target.value]; if(!x) return;
-  $("aN").value=x.n; $("aF").value=x.f; $("aO").value=x.o; $("aNorma").value=x.norma; $("aRef").value=x.ref||""; $("aNota").value=x.nota||""; recalcProx();
+  $("aN").value=x.n; $("aF").value=x.f; setO(x.o); $("aNorma").value=x.norma; $("aRef").value=x.ref||""; $("aNota").value=x.nota||""; recalcProx();
 });
 $("aF").addEventListener("change",recalcProx);
 $("aUlt").addEventListener("change",recalcProx);
@@ -545,7 +552,7 @@ $("btnAdd").addEventListener("click",()=>openAdd());
 $("frmA").addEventListener("submit",async ev=>{
   ev.preventDefault();
   const n=$("aN").value.trim().replace(/^\s*\d+\.\s*/,""), prox=$("aProx").value; if(!n||!prox) return;
-  const prev=editId?find(editId):null; const rec={n:n,num:(prev&&numOf(prev)?numOf(prev):sigNum()),norma:$("aNorma").value,ref:$("aRef").value.trim(),f:$("aF").value,o:$("aO").value,nota:$("aNota").value.trim(),msg:$("aMsg").value.trim(),prox:prox,ult:$("aUlt").value||null};
+  const prev=editId?find(editId):null; const rec={n:n,num:(prev&&numOf(prev)?numOf(prev):sigNum()),norma:$("aNorma").value,ref:$("aRef").value.trim(),f:$("aF").value,o:getO(),nota:$("aNota").value.trim(),msg:$("aMsg").value.trim(),prox:prox,ult:$("aUlt").value||null};
   let id=editId;
   if(!id){ id="x"+Date.now().toString(36); rec.custom=true; }
   else if(act[id]&&act[id].custom) rec.custom=true;
@@ -553,7 +560,7 @@ $("frmA").addEventListener("submit",async ev=>{
   if(await saveAct(id,rec)){
     if(editId&&ov[id]&&rec.f!=="U") await save(id,null);
     toast(editId?"Actividad actualizada":"Actividad agregada"); logEvt((editId?"actualizó":"agregó")+" la actividad «"+n+"»");
-    if(rec.o!=="N"&&rec.o!==antes) avisar(rec.o,rec.n,"tablero de Controles",rec.prox);
+    ownCodes(rec.o).filter(k=>!ownCodes(antes).includes(k)).forEach(k=>avisar(k,rec.n,"tablero de Controles",rec.prox));
   }
   dlgA.close();
 });
@@ -581,11 +588,15 @@ document.getElementById("rows").addEventListener("click",ev=>{
   const r=ev.target.closest("button[data-reopen]"); if(r){ save(r.dataset.reopen,null).then(ok=>{ if(ok){ toast("Tarea reabierta"); logEvt("reabrió «"+((find(r.dataset.reopen)||{}).n)+"»") } }); }
 });
 document.getElementById("rows").addEventListener("change",async ev=>{
-  const s=ev.target.closest("select[data-own]"); if(!s) return;
-  const c=find(s.dataset.own); if(!c) return;
-  const rec=Object.assign({},c,{o:s.value}); delete rec.id;
-  if(await saveAct(c.id,rec)){ toast("Responsable: "+NOMBRES[s.value]); logEvt("asignó «"+c.n+"» a "+NOMBRES[s.value]); if(s.value!=="N"&&s.value!==c.o) avisar(s.value,c.n,"tablero de Controles",(eff(c)||{}).prox) }
+  const s=ev.target.closest("details[data-own] input"); if(!s) return;
+  const box=s.closest("details"); const c=find(box.dataset.own); if(!c) return;
+  const nuevo=ownStr([...box.querySelectorAll("input:checked")].map(i=>i.value));
+  openOwn=c.id;
+  const rec=Object.assign({},c,{o:nuevo}); delete rec.id;
+  if(await saveAct(c.id,rec)){ toast("Responsables: "+ownTxt(nuevo)); logEvt("asignó «"+c.n+"» a "+ownTxt(nuevo)); ownCodes(nuevo).filter(k=>!ownCodes(c.o).includes(k)).forEach(k=>avisar(k,c.n,"tablero de Controles",(eff(c)||{}).prox)) }
 });
+document.getElementById("rows").addEventListener("toggle",ev=>{const d=ev.target; if(d.matches&&d.matches("details[data-own]")){ if(d.open) openOwn=d.dataset.own; else if(openOwn===d.dataset.own) openOwn=null }},true);
+document.addEventListener("click",ev=>{ if(ev.target.closest&&ev.target.closest(".ownm")) return; document.querySelectorAll(".ownm[open]").forEach(d=>d.removeAttribute("open")); openOwn=null });
 document.getElementById("summary").addEventListener("click",ev=>{const b=ev.target.closest("button[data-e]"); if(!b) return; st.estado=st.estado===b.dataset.e?"":b.dataset.e; render()});
 document.getElementById("segNorma").addEventListener("click",ev=>{const b=ev.target.closest("button"); if(!b) return; st.norma=b.dataset.v;
   document.querySelectorAll("#segNorma button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); render()});
