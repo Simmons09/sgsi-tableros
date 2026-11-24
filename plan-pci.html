@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plan de Trabajo PCI DSS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: matriz de una fila por control con columnas Mensual / Trimestral / Semestral / Anual; la fecha vive en la columna de su frecuencia. */
+:root{
+  /* Paleta corporativa: #00737D, #0CC0AA, #41BDC8, #40C6D1, #3FE4F3, #D9FAFD, #545454, #C0C0C0 */
+  --bg:#f3fcfd; --surface:#ffffff; --ink:#2f3a3c; --muted:#5f6b6d; --line:#cfdcde;
+  --accent:#00737D; --accent-ink:#ffffff; --accent-soft:#D9FAFD; --brand2:#0CC0AA;
+  --late:#b3261e; --late-bg:#fbe9e7; --soon:#8a5a00; --soon-bg:#fdf1d6; --ok:#1d6b46; --ok-bg:#e1f2e8;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#08272b; --surface:#0f363b; --ink:#e8f7f9; --muted:#9fc3c8;
+    --line:#1f4f56; --accent:#3FE4F3; --accent-ink:#00292d; --accent-soft:#0f4a50;
+    --late:#ff8a80; --late-bg:#3a1c1a; --soon:#f2c15a; --soon-bg:#372a0c; --ok:#6fd3a0; --ok-bg:#153024;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08272b; --surface:#0f363b; --ink:#e8f7f9; --muted:#9fc3c8; --line:#1f4f56;
+  --accent:#3FE4F3; --accent-ink:#00292d; --accent-soft:#0f4a50;
+  --late:#ff8a80; --late-bg:#3a1c1a; --soon:#f2c15a; --soon-bg:#372a0c; --ok:#6fd3a0; --ok-bg:#153024;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{border-top:6px solid var(--accent);background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;
+  padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{position:relative;max-width:1600px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-end;justify-content:space-between}
+h1{color:var(--accent);font-family:var(--f-display);font-weight:700;font-size:clamp(26px,4vw,36px);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:6px 0 0;max-width:62ch}
+.today{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.summary{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-weight:600;font-size:13px;border:1px solid transparent;cursor:pointer;background:var(--surface);color:var(--ink);font-family:inherit}
+.pill b{font-family:var(--f-mono);font-weight:500}
+.pill.late{background:var(--late-bg);color:var(--late)} .pill.soon{background:var(--soon-bg);color:var(--soon)} .pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill[aria-pressed="true"]{outline:2px solid currentColor;outline-offset:1px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--muted);padding:7px 12px;font:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+input[type=text],input[type=search],input[type=date],select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+input[type=search]{min-width:200px;flex:1 1 200px;max-width:320px}
+label.chk{display:inline-flex;gap:6px;align-items:center;color:var(--muted);cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:0;table-layout:fixed}
+th{background:var(--accent-soft);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600;white-space:nowrap}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.name{min-width:320px;max-width:420px}
+.nm{font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;align-items:center}
+.tag{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+.tag.who{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.note{color:var(--muted);font-size:12.5px;margin-top:5px}
+.cell{display:flex;flex-direction:column;gap:4px;align-items:flex-start;padding:8px 10px;border-radius:8px;min-width:150px}
+.cell .d{font-family:var(--f-mono);font-size:13px;font-weight:500}
+.cell .s{font-size:12px;font-weight:600}
+.cell .l{font-size:11.5px;color:var(--muted)}
+.cell.late{background:var(--late-bg);color:var(--late)} .cell.soon{background:var(--soon-bg);color:var(--soon)} .cell.ok{background:var(--ok-bg);color:var(--ok)}
+.cell .l{color:inherit;opacity:.8}
+.cell button{margin-top:4px;font:inherit;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer}
+.cell button:hover{background:var(--surface)}
+td.empty{color:var(--line);text-align:center}
+.cell.none{background:var(--accent-soft);color:var(--muted)}
+select.own{font:inherit;font-size:11.5px;padding:1px 4px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.ownm{position:relative;font-size:13px}.ownm summary{cursor:pointer;list-style:none;padding:4px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);font-weight:600;color:var(--ink)}.ownm summary::-webkit-details-marker{display:none}.ownm summary::after{content:" \25BE";color:var(--muted)}.ownm .ownl{margin-top:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px}.ownm label,.chks label{display:flex;gap:8px;align-items:center;padding:5px 6px;cursor:pointer;font-weight:500;font-size:13px}.chks{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;padding:4px;background:var(--surface);max-height:210px;overflow:auto}.chks .gl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:6px 6px 2px}
+.rowact{display:flex;gap:14px;margin-top:8px}
+.rowact button{font:inherit;font-size:12px;background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;cursor:pointer}
+.rowact button:hover{color:var(--ink)} .rowact button.del:hover{color:var(--late)}
+.toolbar .btn{margin-left:auto}
+textarea{resize:vertical;min-height:60px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+dialog.wide{width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.empty-state{padding:36px 16px;text-align:center;color:var(--muted)}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:20px;width:min(420px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(8,16,22,.55)}
+dialog h2{font-family:var(--f-display);font-size:20px;margin:0 0 4px}
+dialog p{margin:0 0 14px;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field span{font-size:12px;color:var(--muted);font-weight:600}
+.actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:6px}
+.btn{font:inherit;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.link{border-color:transparent;color:var(--muted);margin-right:auto}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;font-weight:600;z-index:20}
+footer{color:var(--muted);font-size:12.5px;max-width:80ch}
+@media (max-width:720px){
+  .tablewrap{border:0;background:transparent;overflow:visible}
+  table,tbody,tr,td{display:block;min-width:0}
+  thead{display:none}
+  tr{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+  td{padding:0;border:0}
+  td.empty{display:none}
+  td.name{min-width:0;max-width:none}
+  td[data-f]::before{content:attr(data-f);display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:4px}
+  .cell{min-width:0;align-self:stretch}
+}
+@media (prefers-reduced-motion:no-preference){ .cell,.pill{transition:background .15s} }
+
+td.name{min-width:0;max-width:none;overflow-wrap:anywhere}
+td{overflow-wrap:anywhere}
+.fechas{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12.5px}
+.fechas b{font-weight:500;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;align-self:center}
+td.nw{white-space:nowrap}
+.nm{font-weight:600}
+.n{font-family:var(--f-mono);color:var(--muted)}
+.pri{font-family:var(--f-mono);font-size:11px;padding:1px 6px;border-radius:4px}
+.pri.Alta{background:var(--late-bg);color:var(--late)} .pri.Media{background:var(--soon-bg);color:var(--soon)} .pri.Baja{background:var(--accent-soft);color:var(--accent)}
+select.est{font:inherit;font-size:12.5px;font-weight:600;padding:4px 8px;border-radius:999px;border:1px solid transparent}
+select.est.Ejecutada{background:var(--ok-bg);color:var(--ok)} select.est.Pendiente{background:var(--accent-soft);color:var(--muted)} select.est.En\ ejecución{background:var(--soon-bg);color:var(--soon)}
+.dt{font-family:var(--f-mono);font-size:12.5px}
+.dt.late{color:var(--late);font-weight:600} .dt.soon{color:var(--soon);font-weight:600}
+.dt small{display:block;color:var(--muted);font-weight:400}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px}
+@media (max-width:520px){.row3{grid-template-columns:1fr}}
+
+
+.hoy{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin:0 0 16px}
+.hoyc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.hoyc h2{font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.hoyc ul{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:13.5px}
+.hoyc li{display:flex;gap:8px;align-items:baseline;min-width:0}
+.hoyc li .tx{flex:1;min-width:0;overflow-wrap:anywhere}
+.hoyc time{color:var(--muted);font-size:12px;white-space:nowrap}
+.hoyc .vacio{color:var(--muted);font-size:13px}
+.hoyn{display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:8px;font-size:13px;font-weight:600}
+.tg{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;white-space:nowrap;min-width:72px;text-align:center}
+.tg.venc{background:var(--late-bg);color:var(--late)} .tg.hoy{background:var(--soon-bg);color:var(--soon)} .tg.prox{background:var(--ok-bg);color:var(--ok)}
+@media (max-width:720px){.hoy{grid-template-columns:1fr}}
+.navrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.hdr-r{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:10px}.navbtn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:13px;text-decoration:none;font-family:inherit}.navbtn:hover{filter:brightness(1.08)}@media (max-width:720px){.hdr-r{align-items:flex-start;margin-left:0}}
+</style><link rel="stylesheet" href="fondo.css">
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="today" id="today"></div>
+      <h1>Plan de Trabajo PCI DSS</h1>
+      <p class="sub">Tareas para cumplir PCI DSS 4.0.1. Cambia el estado desde la fila, reprograma fechas, agrega tareas nuevas o edita cualquier columna.</p>
+    </div>
+    <div class="hdr-r"><div class="navrow"><a class="navbtn" href="plan.html">← Plan de Trabajo SGSI (ISO 27001)</a><a class="navbtn" href="controles.html">Ir a Controles →</a></div><div class="summary" id="summary" role="group" aria-label="Filtrar por estado"></div></div>
+  </header>
+  <section class="hoy" id="hoy" aria-label="Resumen de hoy"></section>
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Buscar tarea" aria-label="Buscar tarea">
+    <select id="fMes" aria-label="Mes"></select>
+    <select id="fResp" aria-label="Responsable"><option value="">Todos los responsables</option></select>
+    <select id="fTri" aria-label="Trimestre"><option value="">Todos los trimestres</option></select>
+    <select id="fPri" aria-label="Prioridad"><option value="">Toda prioridad</option><option>Alta</option><option>Media</option><option>Baja</option></select>
+    <button type="button" class="btn primary" id="btnAdd">+ Agregar tarea</button>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th style="width:44%">Actividad</th><th style="width:16%">Responsables</th><th style="width:9%">Prioridad</th><th style="width:19%">Fechas</th><th style="width:12%">Estado</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty-state" id="empty" hidden>Ninguna tarea coincide con este filtro.</div>
+  </div>
+  <footer>Los cambios se guardan para todas las personas con permiso de edición. Vista mensual: las pendientes y en ejecución siguen vigentes en cada mes; las ejecutadas quedan archivadas en el mes en que se ejecutaron (se consultan en el selector de mes). Una tarea sin ejecutar pasa a rojo cuando vence su fecha vigente (la reprogramada si existe) y a ámbar 15 días antes.</footer>
+</div>
+
+<dialog id="dlg" class="wide">
+  <form method="dialog" id="frm">
+    <h2 id="dTitle">Tarea</h2><p id="dSub"></p>
+    <label class="field"><span>Actividad</span><textarea id="fAct" required></textarea></label>
+    <label class="field"><span>Entregable / evidencia esperada</span><textarea id="fEnt"></textarea></label>
+    <div class="row2">
+      <div class="field"><span>Responsables (puedes elegir varios)</span><div class="chks" id="fRes" role="group" aria-label="Responsables"><div class="gl">Roles</div><label><input type="checkbox" value="Oficial de Seguridad de la Información"> Oficial de Seguridad de la Información</label><label><input type="checkbox" value="Oficial de Cumplimiento"> Oficial de Cumplimiento</label><label><input type="checkbox" value="Analista de Seguridad"> Analista de Seguridad</label><div class="gl">Procesos</div><label><input type="checkbox" value="Seguridad de la Información"> Seguridad de la Información</label><label><input type="checkbox" value="Desarrollo de Software"> Desarrollo de Software</label><label><input type="checkbox" value="Operaciones"> Operaciones</label><label><input type="checkbox" value="Gestión Financiera"> Gestión Financiera</label><label><input type="checkbox" value="Gestión de Mesa de Ayuda"> Gestión de Mesa de Ayuda</label><label><input type="checkbox" value="Gestión del Talento Humano"> Gestión del Talento Humano</label><label><input type="checkbox" value="Gestión Comercial"> Gestión Comercial</label><label><input type="checkbox" value="Soporte Interno"> Soporte Interno</label><label><input type="checkbox" value="Estrategia Corporativa"> Estrategia Corporativa</label><label><input type="checkbox" value="Gestión de la Infraestructura Tecnológica"> Gestión de la Infraestructura Tecnológica</label><label><input type="checkbox" value="Gestión de Proyectos"> Gestión de Proyectos</label><label><input type="checkbox" value="QA"> QA</label><label><input type="checkbox" value="Todos los procesos"> Todos los procesos</label></div></div>
+      <label class="field"><span>Apoyo / participantes</span><input type="text" id="fApo"></label>
+    </div>
+        <div class="row3">
+      <label class="field"><span>Prioridad</span><select id="fPr"><option>Alta</option><option>Media</option><option>Baja</option></select></label>
+      <label class="field"><span>Estado</span><select id="fEst"><option>Pendiente</option><option>En ejecución</option><option>Ejecutada</option></select></label>
+      <label class="field"><span>Tiempo estimado</span><input type="text" id="fDur" placeholder="2 semanas"></label>
+    </div>
+    <div class="row3">
+      <label class="field"><span>Fecha inicio</span><input type="date" id="fIni"></label>
+      <label class="field"><span>Fecha fin (compromiso)</span><input type="date" id="fFin"></label>
+      <label class="field"><span>Fecha reprogramada</span><input type="date" id="fRep"></label>
+    </div>
+    <div class="row2">
+      <label class="field"><span>Trimestre</span><input type="text" id="fTr" placeholder="T4-2026"></label>
+      <label class="field"><span>Fecha real de ejecución</span><input type="date" id="fReal"></label>
+    </div>
+    <label class="field"><span>Evidencia / referencia documental</span><textarea id="fEvi"></textarea></label>
+    <label class="field"><span>Observaciones</span><textarea id="fObs"></textarea></label>
+    <div class="actions">
+      <button type="button" class="btn link" id="bDel">Eliminar</button>
+      <button type="button" class="btn" id="bCan">Cancelar</button>
+      <button type="submit" class="btn primary" id="bOk">Guardar</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlgD"><h2>Eliminar tarea</h2><p id="dDelTxt"></p>
+  <div class="actions"><button type="button" class="btn" id="dNo">Cancelar</button><button type="button" class="btn primary" id="dYes">Eliminar</button></div></dialog>
+<div id="toast" hidden></div>
+
+<style>
+#login[hidden]{display:none}
+#login{position:fixed;inset:0;z-index:99;background:#D9FAFD;display:flex;align-items:center;justify-content:center;padding:16px;font-family:inherit}
+#login .box{background:#fff;border:1px solid #C0C0C0;border-radius:14px;max-width:380px;width:100%;padding:24px;box-shadow:0 8px 30px rgba(0,115,125,.15)}
+#login h2{margin:0 0 6px;color:#00737D;font-size:20px}
+#login p{margin:0 0 14px;color:#545454;font-size:14px;line-height:1.4}
+#login input{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #C0C0C0;border-radius:8px;font-size:16px;margin-bottom:10px}
+#login button{width:100%;padding:11px;border:0;border-radius:8px;background:#00737D;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+#login button:disabled{opacity:.6}
+#login .msg{margin-top:10px;font-size:13px;color:#545454;min-height:18px}
+#login .msg.err{color:#b3261e}
+#salir{position:fixed;right:10px;bottom:10px;z-index:50;font-size:12px;color:#545454;background:#fff;border:1px solid #C0C0C0;border-radius:20px;padding:5px 12px;cursor:pointer;display:none}
+</style>
+<div id="login" hidden><div class="box"><h2>Plan de Trabajo PCI DSS</h2><p>Ingresa con tu correo de WPOSS. Te enviaremos un enlace para entrar, sin contraseña.</p>
+<input id="lgMail" type="email" inputmode="email" autocomplete="email" placeholder="tucorreo@wposs.com"><button id="lgBtn" type="button">Enviarme el enlace</button><div class="msg" id="lgMsg"></div></div></div>
+<button id="salir" type="button">Cerrar sesión</button>
+<script>
+const FBCFG={apiKey:"AIzaSyDCqkyeiYWBTBSRc-V6mEC3ZX_doEr_O0I",authDomain:"wposs-revisiones.firebaseapp.com",projectId:"wposs-revisiones",storageBucket:"wposs-revisiones.firebasestorage.app",messagingSenderId:"129876186379",appId:"1:129876186379:web:40e51bafe61cbc611d7e0e"};
+const FB={
+  async start(onReady,onDenied){
+    const V="10.14.1",B="https://www.gstatic.com/firebasejs/"+V+"/";
+    const [A,AU,FS]=await Promise.all([import(B+"firebase-app.js"),import(B+"firebase-auth.js"),import(B+"firebase-firestore.js")]);
+    const app=A.initializeApp(FBCFG), auth=AU.getAuth(app), fs=FS.getFirestore(app);
+    const $=id=>document.getElementById(id), msg=(t,e)=>{$("lgMsg").textContent=t;$("lgMsg").className="msg"+(e?" err":"")};
+    const url=location.origin+location.pathname;
+    $("lgBtn").onclick=async()=>{
+      const m=$("lgMail").value.trim().toLowerCase(); if(!m){msg("Escribe tu correo",1);return}
+      $("lgBtn").disabled=true;
+      try{ await AU.sendSignInLinkToEmail(auth,m,{url:url,handleCodeInApp:true}); try{localStorage.setItem("fbMail",m)}catch(e){}; msg("Listo. Revisa tu correo y abre el enlace desde este mismo navegador (mira también en no deseados).") }
+      catch(e){ msg("No se pudo enviar el enlace ("+(e.code||"error")+")",1) }
+      $("lgBtn").disabled=false;
+    };
+    $("salir").onclick=()=>AU.signOut(auth).then(()=>location.reload());
+    if(AU.isSignInWithEmailLink(auth,location.href)){
+      let m=null; try{m=localStorage.getItem("fbMail")}catch(e){}
+      if(!m) m=prompt("Confirma tu correo para terminar de ingresar");
+      try{ await AU.signInWithEmailLink(auth,m,location.href); try{localStorage.removeItem("fbMail")}catch(e){}; history.replaceState(null,"",url) }
+      catch(e){ $("login").hidden=false; msg("El enlace ya no sirve o es de otro navegador. Pide uno nuevo.",1) }
+    }
+    AU.onAuthStateChanged(auth,u=>{
+      if(!u){ $("login").hidden=false; $("salir").style.display="none"; return }
+      $("login").hidden=true; $("salir").style.display="block"; $("salir").textContent="Cerrar sesión · "+u.email;
+      const db={
+        doc:p=>({set:v=>FS.setDoc(FS.doc(fs,p),v),delete:()=>FS.deleteDoc(FS.doc(fs,p))}),
+        collection:n=>({onSnapshot:(ok,err)=>FS.onSnapshot(FS.collection(fs,n),ok,e=>{ if(e&&e.code==="permission-denied"){ $("login").hidden=false; msg("Tu correo ("+u.email+") no tiene acceso. Pide a Brayner que lo agregue.",1) } err&&err(e) })})
+      };
+      window.FBDB=db; window.FBUSER=u.email; onReady(db);
+    });
+  }
+};
+</script>
+<script>
+const DATA=[{"id": "pci-1", "n": 1, "act": "Definir y confirmar el alcance PCI DSS: entorno de datos de tarjeta (CDE), flujos de datos de cuenta, inventario de componentes y sistemas conectados.", "ent": "Documento de alcance, diagrama de red y diagrama de flujo de datos actualizados.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-2", "n": 2, "act": "Requisito 1 – Controles de seguridad de red: documentar y justificar las reglas de firewall y grupos de seguridad, validar la segmentación del CDE y revisar las reglas cada seis meses.", "ent": "Estándar de reglas de red, diagrama de red actualizado y registro de revisión semestral de reglas.", "resp": "", "apo": "", "pri": "Alta", "est": "En ejecución", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-3", "n": 3, "act": "Requisito 2 – Configuraciones seguras: definir estándares de hardening para servidores, bases de datos y servicios de nube, cambiar credenciales por defecto y mantener inventario de servicios permitidos.", "ent": "Estándares de configuración segura y evidencia de aplicación por sistema.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-4", "n": 4, "act": "Requisito 3 – Proteger los datos de cuenta almacenados: confirmar qué datos se almacenan, definir retención y eliminación, enmascarar el PAN y documentar la gestión de claves criptográficas.", "ent": "Inventario de datos de cuenta, política de retención y procedimiento de gestión de claves.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-5", "n": 5, "act": "Requisito 4 – Proteger los datos en transmisión: usar cifrado fuerte en redes abiertas y públicas y mantener inventario de claves y certificados.", "ent": "Inventario de certificados y evidencia de protocolos TLS vigentes.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-6", "n": 6, "act": "Requisito 5 – Protección contra software malicioso: confirmar antimalware en todos los sistemas del alcance, escaneos periódicos y mecanismos contra phishing.", "ent": "Evidencia de cobertura de GravityZone y de la configuración de escaneos.", "resp": "", "apo": "", "pri": "Media", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-7", "n": 7, "act": "Requisito 6 – Desarrollo y sistemas seguros: gestión de vulnerabilidades y parches, ciclo de desarrollo seguro, revisión de código y control de scripts en páginas de pago; atender el fin de soporte de Amazon Linux 2 (6.3.3).", "ent": "Plan de parcheo, evidencia de revisiones de código y plan de migración de Amazon Linux 2.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-8", "n": 8, "act": "Requisito 7 – Restringir el acceso por necesidad de conocer: definir matriz de roles y permisos del CDE y revisar los accesos cada seis meses.", "ent": "Matriz de roles y permisos y actas de revisión de accesos.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-9", "n": 9, "act": "Requisito 8 – Identificar y autenticar el acceso: MFA en todo acceso al CDE, requisitos de contraseña, gestión de cuentas de servicio y de terceros.", "ent": "Evidencia de MFA por sistema y política de autenticación aplicada.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-10", "n": 10, "act": "Requisito 9 – Restringir el acceso físico: controles de acceso a instalaciones y áreas sensibles, registro de visitantes y control de medios y de terminales POS.", "ent": "Procedimiento de acceso físico, registros de visitantes e inventario de terminales POS.", "resp": "", "apo": "", "pri": "Media", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-11", "n": 11, "act": "Requisito 10 – Registrar y monitorear el acceso: centralizar los registros del CDE, revisión diaria, sincronización de hora y retención de 12 meses; ampliar la Lambda de reportes de inicio de sesión.", "ent": "Evidencia de ingesta de logs por sistema, reportes de revisión diaria y evidencia de retención.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-12", "n": 12, "act": "Requisito 11 – Probar la seguridad con regularidad: escaneos ASV trimestrales, escaneos internos, pruebas de penetración anuales, pruebas de segmentación y detección de cambios.", "ent": "Informes ASV, informes de pentest y de segmentación y evidencia de remediación.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-13", "n": 13, "act": "Requisito 12 – Políticas y programa de seguridad: revisar la política anual, análisis de riesgos dirigido, programa de concientización y plan de respuesta a incidentes con pruebas anuales.", "ent": "Políticas vigentes, análisis de riesgos, registro de capacitación y acta de prueba de incidentes.", "resp": "", "apo": "", "pri": "Media", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-14", "n": 14, "act": "Gestionar los proveedores de servicios (TPSP): lista de proveedores con acceso al CDE, certificados AOC y matriz de responsabilidades compartidas por cliente.", "ent": "Lista de TPSP, AOC vigentes y matrices de responsabilidades firmadas.", "resp": "", "apo": "", "pri": "Media", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-15", "n": 15, "act": "Revisar el Excel de control de cumplimiento PCI DSS v4.0.1 enviado por Nordstern y registrar el estado y la evidencia de cada requisito.", "ent": "Excel de control de cumplimiento diligenciado con evidencias.", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}, {"id": "pci-16", "n": 16, "act": "Preparar la evaluación anual de cumplimiento: elegir el tipo de evaluación (ROC o SAQ), recopilar evidencias y gestionar la emisión del AOC con el evaluador.", "ent": "Informe de evaluación y Attestation of Compliance (AOC).", "resp": "", "apo": "", "pri": "Alta", "est": "Pendiente", "dur": "", "ini": "", "fin": "", "rep": "", "tri": "", "real": "", "evi": "", "obs": ""}];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const TODAY=(()=>{const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())})();
+const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const fmt=s=>{if(!s)return "";const[y,m,d]=s.split("-").map(Number);return d+" "+MES[m-1]+" "+y};
+const days=s=>Math.round((new Date(s+"T00:00:00")-new Date(TODAY+"T00:00:00"))/864e5);
+let db=null, ov={}, st={f:"",q:"",r:"",t:"",p:"",m:"cur"}, cur=null;
+const ROLES=[["Oficial de Seguridad de la Información","Brayner","braynerflorez@wposs.com"],["Oficial de Cumplimiento","Laura","laurasepulveda@wposs.com"],["Analista de Seguridad","Yesly","yeslymontaguth@wposs.com"]];
+const PROCS=["Seguridad de la Información","Desarrollo de Software","Operaciones","Gestión Financiera","Gestión de Mesa de Ayuda","Gestión del Talento Humano","Gestión Comercial","Soporte Interno","Estrategia Corporativa","Gestión de la Infraestructura Tecnológica","Gestión de Proyectos","QA","Todos los procesos"];
+function normR(v){const s=String(v||"").trim(); if(!s) return ""; const l=s.toLowerCase();
+  const x=ROLES.find(r=>r[0].toLowerCase()===l)||PROCS.find(p=>p.toLowerCase()===l); if(x) return Array.isArray(x)?x[0]:x;
+  if(l.includes("brayner")) return ROLES[0][0]; if(l.includes("laura")) return ROLES[1][0]; if(l.includes("yesly")) return ROLES[2][0];
+  if(l==="proceso de seguridad") return PROCS[0]; return s}
+function splitR(v){return [...new Set(String(v||"").split(";").map(normR).filter(Boolean))]}
+function setResp(v){const a=splitR(v), box=$("fRes");
+  box.querySelectorAll("label[data-x]").forEach(l=>l.remove());
+  box.querySelectorAll("input").forEach(i=>{i.checked=a.includes(i.value)});
+  a.filter(x=>![...box.querySelectorAll("input")].some(i=>i.value===x)).forEach(x=>{const l=document.createElement("label");l.dataset.x="1";l.innerHTML='<input type="checkbox" value="'+esc(x)+'" checked> '+esc(x);box.appendChild(l)})}
+function getResp(){return [...$("fRes").querySelectorAll("input:checked")].map(i=>i.value).join("; ")}
+function all(){
+  const m={}; DATA.forEach(d=>m[d.id]=d);
+  Object.keys(ov).forEach(k=>{const v=ov[k]; if(v&&v.borrada) delete m[k]; else if(v) m[k]=Object.assign({},m[k]||{},v)});
+  const L=Object.values(m).map(t=>Object.assign({},t,{resp:splitR(t.resp).join("; ")})).sort((a,b)=>(a.n||0)-(b.n||0));
+  L.forEach((t,i)=>{t.num=i+1});
+  return L.reverse();
+}
+const MESL=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function mesDe(t){return (t.real||t.fin||TODAY).slice(0,7)}
+function mesTxt(k){const[y,m]=k.split("-").map(Number);return MESL[m-1]+" "+y}
+/* Vista mensual: las pendientes y en ejecución siempre siguen vigentes; las ejecutadas se archivan en el mes en que se ejecutaron. */
+function enMes(t){
+  const cm=TODAY.slice(0,7);
+  if(st.m==="all") return true;
+  const m=st.m==="cur"?cm:st.m;
+  if(t.est==="Ejecutada") return mesDe(t)===m;
+  return m===cm;
+}
+function vig(t){return t.rep||t.fin||""}
+function sem(t){ if(t.est==="Ejecutada") return "ok"; const f=vig(t); if(!f) return ""; const d=days(f); return d<0?"late":d<=15?"soon":""; }
+function matches(t){
+  if(st.f==="late"||st.f==="soon"){ if(sem(t)!==st.f) return false } else if(st.f && t.est!==st.f) return false;
+  if(st.r && !splitR(t.resp).includes(st.r)) return false; if(st.t && t.tri!==st.t) return false; if(st.p && t.pri!==st.p) return false;
+  if(st.q){const h=[t.act,t.ent,t.resp,t.apo,t.evi,t.obs].join(" ").toLowerCase(); if(!h.includes(st.q.toLowerCase())) return false}
+  return true;
+}
+function render(){
+  const L0=all(), L=L0.filter(enMes);
+  $("today").textContent="Hoy · "+fmt(TODAY);
+  const c={late:0,soon:0,Pendiente:0,"En ejecución":0,Ejecutada:0};
+  L.forEach(t=>{c[t.est]=(c[t.est]||0)+1; const s=sem(t); if(s==="late"||s==="soon") c[s]++});
+  const pills=[["","Todas",L.length,""],["late","Vencidas",c.late,"late"],["soon","Próximas",c.soon,"soon"],["Pendiente","Pendientes",c.Pendiente,""],["En ejecución","En ejecución",c["En ejecución"],""],["Ejecutada","Ejecutadas",c.Ejecutada,"ok"]];
+  $("summary").innerHTML=pills.map(p=>'<button type="button" class="pill '+p[3]+'" data-f="'+p[0]+'" aria-pressed="'+(st.f===p[0])+'" style="'+(st.f===p[0]?"outline:2px solid var(--accent)":"")+'">'+p[1]+' <b>'+p[2]+'</b></button>').join("");
+  const cm=TODAY.slice(0,7), ms=[...new Set(L0.filter(t=>t.est==="Ejecutada").map(mesDe).filter(k=>k!==cm))].sort().reverse();
+  $("fMes").innerHTML='<option value="cur">Mes actual · '+mesTxt(cm)+'</option>'+ms.map(k=>'<option value="'+k+'">Ejecutadas en '+mesTxt(k)+'</option>').join("")+'<option value="all">Todo el historial</option>';
+  $("fMes").value=st.m;
+  const rs=[...new Set(L.flatMap(t=>splitR(t.resp)))].sort(), ts=[...new Set(L.map(t=>t.tri).filter(Boolean))].sort();
+  fill("fResp",rs,"Todos los responsables",st.r); fill("fTri",ts,"Todos los trimestres",st.t);
+  const list=L.filter(matches);
+  $("rows").innerHTML=list.map(t=>{
+    const s=sem(t);
+    const reprog=t.rep?'<span class="dt '+s+'">'+fmt(t.rep)+'</span>':'<span class="dt" style="color:var(--line)">—</span>';
+    const f=(l,v,c)=>v?'<b>'+l+'</b><span class="dt '+(c||"")+'">'+v+'</span>':"";
+    return '<tr><td class="name" data-f="Actividad"><div class="nm"><span class="n">'+t.num+'.</span> '+esc(t.act)+'</div>'+(t.ent?'<div class="note">'+esc(t.ent)+'</div>':'')+(t.evi?'<div class="note">Evidencia: '+esc(t.evi)+'</div>':'')+(t.obs?'<div class="note">Obs.: '+esc(t.obs)+'</div>':'')+'<div class="rowact"><button type="button" data-ed="'+t.id+'">Editar</button></div></td>'+
+    '<td data-f="Responsable">'+esc(splitR(t.resp).join(', '))+(t.apo?'<div class="note">Apoyo: '+esc(t.apo)+'</div>':'')+'</td>'+
+    '<td data-f="Prioridad"><span class="pri '+esc(t.pri)+'">'+esc(t.pri)+'</span><div class="note">'+esc(t.tri)+(t.dur?' · '+esc(t.dur):'')+'</div></td>'+
+    '<td data-f="Fechas"><div class="fechas">'+f("Inicio",fmt(t.ini))+f("Fin",fmt(t.fin),t.rep?"":s)+f("Reprog.",fmt(t.rep),s)+f("Real",fmt(t.real))+'</div></td>'+
+    '<td data-f="Estado"><select class="est '+esc(t.est)+'" data-est="'+t.id+'" aria-label="Estado">'+["Pendiente","En ejecución","Ejecutada"].map(o=>'<option'+(o===t.est?" selected":"")+'>'+o+'</option>').join("")+'</select></td></tr>';
+  }).join("");
+  $("empty").hidden=list.length>0; document.querySelector("table").hidden=list.length===0;
+}
+function fill(id,vals,all0,sel){const e=$(id);e.innerHTML='<option value="">'+all0+'</option>'+vals.map(v=>'<option'+(v===sel?" selected":"")+'>'+esc(v)+'</option>').join("")}
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{el.hidden=true},2600)}
+function lsRead(){try{const v=localStorage.getItem("plan-pci-T");return v?JSON.parse(v):{}}catch(e){return {}}}
+async function put(id,val){
+  if(db){
+    try{ await db.doc("plan/"+id).set(val); return true }
+    catch(e){ toast("No tienes permiso para guardar cambios en este tablero"); return false }
+  }
+  ov[id]=val; try{localStorage.setItem("plan-pci-T",JSON.stringify(ov))}catch(e){} render(); return true;
+}
+function find(id){return all().find(t=>t.id===id)}
+
+/* ---------- aviso por correo (EmailJS) ---------- */
+const MAIL={service:"service_17m50za",template:"template_kd8gmc5",key:"wGnQZMpelzHqLGqrs"};
+const ALIAS="areaseguridad@wposs.com";
+const escH=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LINK=()=>location.href.split("#")[0].split("?")[0];
+async function enviar(to,asunto,texto,extra){
+  try{
+    const r=await fetch("https://api.emailjs.com/api/v1.0/email/send",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({service_id:MAIL.service,template_id:MAIL.template,user_id:MAIL.key,
+        template_params:Object.assign({to_email:to,asunto:asunto,mensaje:escH(texto).replace(/\n/g,"<br>")},extra||{})})});
+    return r.ok;
+  }catch(e){return false}
+}
+async function avisar(nombre,tarea,tablero,fecha){
+  const R=ROLES.find(r=>r[0]===nombre); if(!R) return; const to=R[2];
+  const f=fecha?fmt(fecha):"Sin fecha";
+  const ok=await enviar(to,"Nueva tarea asignada: "+tarea,"Hola,\n\nSe te asignó una tarea como "+R[0]+" en el "+tablero+":\n"+tarea+"\n\nFecha: "+f+"\nÁbrela aquí: "+LINK(),
+    {responsable:R[0],tarea:tarea,tablero:tablero,fecha:f,enlace:LINK()});
+  toast(ok?"Aviso enviado a "+to:"No se pudo enviar el aviso por correo");
+}
+/* ---------- resumen de hoy y novedades ---------- */
+const QUIEN={"braynerflorez@wposs.com":"Oficial de Seguridad","laurasepulveda@wposs.com":"Oficial de Cumplimiento","yeslymontaguth@wposs.com":"Analista de Seguridad"};
+let logs=[], logsLimpios=false;
+function logEvt(x){ if(!db) return; const k="log_"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  try{ const p=db.doc("revisiones/"+k).set({t:Date.now(),u:QUIEN[String(window.FBUSER||"").toLowerCase()]||"Alguien",x:x,b:"c"}); if(p&&p.catch) p.catch(()=>{}) }catch(e){} }
+function setLogs(m){
+  const todos=Object.keys(m).filter(k=>k.indexOf("log_")===0&&m[k]&&m[k].t).map(k=>({k:k,v:m[k]}));
+  logs=todos.map(o=>o.v).filter(v=>v.b==="c").sort((a,b)=>b.t-a.t);
+  if(db&&!logsLimpios){ logsLimpios=true; const lim=Date.now()-30*864e5; todos.filter(o=>o.v.t<lim).slice(0,20).forEach(o=>{try{const p=db.doc("revisiones/"+o.k).delete(); if(p&&p.catch) p.catch(()=>{})}catch(e){}}) }
+}
+function hace(t){const s=Math.round((Date.now()-t)/1000); if(s<60) return "hace un momento"; const m=Math.round(s/60); if(m<60) return "hace "+m+" min"; const h=Math.round(m/60); if(h<24) return "hace "+h+" h"; const d=Math.round(h/24); return d===1?"ayer":"hace "+d+" días"}
+function renderHoy(){
+  const el=document.getElementById("hoy"); if(!el) return;
+  const it=hoyItems(), hoy=it.filter(x=>x.d===0), venc=it.filter(x=>x.d<0).sort((a,b)=>b.d-a.d), prox=it.filter(x=>x.d>0&&x.d<=2).sort((a,b)=>a.d-b.d);
+  const lista=[].concat(hoy.map(x=>["hoy","Hoy",x]),prox.map(x=>["prox",x.d===1?"Mañana":"En "+x.d+" días",x]),venc.map(x=>["venc","Vencido",x]));
+  const li=lista.slice(0,4).map(r=>'<li><span class="tg '+r[0]+'">'+r[1]+'</span><span class="tx">'+esc(r[2].t)+'</span></li>').join("");
+  const mas=lista.length>4?'<div class="vacio" style="margin-top:6px">y '+(lista.length-4)+' más</div>':"";
+  const lim=Date.now()-14*864e5, nv=logs.filter(l=>l.t>=lim).slice(0,5);
+  el.innerHTML='<div class="hoyc"><h2>Lo de hoy</h2><div class="hoyn"><span>'+hoy.length+' vencen hoy</span><span>'+prox.length+' en 2 días</span><span>'+venc.length+' vencidos</span></div>'+(li?'<ul>'+li+'</ul>'+mas:'<div class="vacio">Nada vence hoy ni en los próximos 2 días.</div>')+'</div>'
+   +'<div class="hoyc"><h2>Novedades</h2>'+(nv.length?'<ul>'+nv.map(l=>'<li><span class="tx"><b>'+esc(l.u)+'</b> '+esc(l.x)+'</span><time>'+hace(l.t)+'</time></li>').join("")+'</ul>':'<div class="vacio">Aún no hay movimientos.</div>')+'</div>';
+}
+{const _r=render; render=function(){_r.apply(this,arguments); renderHoy()}}
+setInterval(renderHoy,60000);
+function hoyItems(){return all().filter(t=>t.est!=="Ejecutada"&&vig(t)).map(t=>({t:t.num+". "+t.act,d:days(vig(t))}))}
+function trimOf(f){if(!f)return "";const[y,m]=f.split("-").map(Number);return "T"+Math.ceil(m/3)+"-"+y}
+
+const F={act:"fAct",ent:"fEnt",apo:"fApo",pri:"fPr",est:"fEst",dur:"fDur",ini:"fIni",fin:"fFin",rep:"fRep",tri:"fTr",real:"fReal",evi:"fEvi",obs:"fObs"};
+function openDlg(id){
+  cur=id?find(id):null;
+  const t=cur||{pri:"Alta",est:"Pendiente",ini:TODAY};
+  $("dTitle").textContent=cur?"Tarea "+cur.num:"Nueva tarea";
+  $("dSub").textContent=cur?"Edita lo que haga falta; al guardar queda para todos.":"Completa lo que sepas; el resto lo puedes editar después.";
+  Object.keys(F).forEach(k=>{$(F[k]).value=t[k]||""}); setResp(t.resp);
+  $("bDel").hidden=!cur; $("dlg").showModal();
+}
+$("frm").addEventListener("submit",async ev=>{
+  ev.preventDefault();
+  const r={}; Object.keys(F).forEach(k=>{r[k]=$(F[k]).value.trim()}); r.resp=getResp();
+  if(!r.act){toast("Escribe la actividad");return}
+  if(!r.tri) r.tri=trimOf(r.rep||r.fin);
+  if(r.est==="Ejecutada"&&!r.real) r.real=TODAY;
+  if(r.est!=="Ejecutada") r.real=r.real&&cur&&cur.est==="Ejecutada"?"":r.real;
+  let id,n;
+  let num; if(cur){id=cur.id;n=cur.n;num=cur.num}else{n=Math.max(0,...all().map(t=>t.n||0))+1;num=all().length+1;id="pci-x"+Date.now()}
+  $("dlg").close();
+  const antes=cur?cur.resp:"";
+  if(await put(id,Object.assign({id:id,n:n},r))){ toast("Guardado"); logEvt(cur?"editó la tarea "+num:"creó la tarea "+num+": "+r.act); splitR(r.resp).filter(x=>!splitR(antes).includes(x)).forEach(x=>avisar(x,"Tarea "+num+": "+r.act,"Plan de Trabajo PCI DSS",r.fin||r.rep)) }
+});
+$("bCan").onclick=()=>$("dlg").close();
+$("bDel").onclick=()=>{$("dlg").close();$("dDelTxt").textContent="Se quitará la tarea "+cur.num+" del tablero para todos.";$("dlgD").showModal()};
+$("dNo").onclick=()=>$("dlgD").close();
+$("dYes").onclick=async()=>{const id=cur.id;$("dlgD").close();if(await put(id,{borrada:true})){ toast("Tarea eliminada"); logEvt("eliminó la tarea "+cur.num) }};
+$("btnAdd").onclick=()=>openDlg(null);
+$("rows").addEventListener("click",ev=>{const b=ev.target.closest("[data-ed]"); if(b) openDlg(b.dataset.ed)});
+$("rows").addEventListener("change",async ev=>{
+  const s=ev.target.closest("[data-est]"); if(!s) return;
+  const t=find(s.dataset.est); const est=s.value;
+  const upd=Object.assign({},t,{est:est,real:est==="Ejecutada"?(t.real||TODAY):""});
+  if(await put(t.id,upd)){ toast("Estado actualizado"); logEvt(est==="Ejecutada"?"completó la tarea "+t.num:"pasó la tarea "+t.num+" a «"+est+"»") } else render();
+});
+$("summary").addEventListener("click",ev=>{const b=ev.target.closest("[data-f]"); if(!b) return; st.f=st.f===b.dataset.f?"":b.dataset.f; render()});
+$("q").addEventListener("input",ev=>{st.q=ev.target.value; render()});
+$("fMes").addEventListener("change",ev=>{st.m=ev.target.value; st.f=""; render()});
+$("fResp").addEventListener("change",ev=>{st.r=ev.target.value; render()});
+$("fTri").addEventListener("change",ev=>{st.t=ev.target.value; render()});
+$("fPri").addEventListener("change",ev=>{st.p=ev.target.value; render()});
+
+render();
+FB.start(d=>{
+  db=d;
+  db.collection("revisiones").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v) m[x.id]=v}); setLogs(m); renderHoy()},()=>{});
+  db.collection("plan").onSnapshot(snap=>{const m={}; snap.docs.forEach(x=>{const v=x.data(); if(v&&x.id.indexOf("pci-")===0) m[x.id]=v}); ov=m; render()},()=>{});
+});
+</script>
+
+</body></html>
